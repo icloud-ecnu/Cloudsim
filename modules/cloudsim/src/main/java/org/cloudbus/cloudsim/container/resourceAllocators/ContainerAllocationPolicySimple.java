@@ -47,7 +47,6 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 		setContainerVmList(containerVmList);
 		for (ContainerVm containerVm : getContainerVmList()) {
 			getFreePes().add(containerVm.getNumberOfPes());
-
 		}
 		int requiredPes = container.getNumberOfPes();
 		boolean result = false;

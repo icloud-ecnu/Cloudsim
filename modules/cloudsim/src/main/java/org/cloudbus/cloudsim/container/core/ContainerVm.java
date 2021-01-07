@@ -273,10 +273,13 @@ public class ContainerVm {
 
             requestedMipsTemp = getMips();
         } else {
-            for (Container contianer : getContainerList()) {
+            for (Container container : getContainerList()) {
 
-                List<Double> containerCurrentRequestedMips = contianer.getCurrentRequestedMips();
-                requestedMipsTemp += containerCurrentRequestedMips.get(0) * containerCurrentRequestedMips.size();
+                List<Double> containerCurrentRequestedMips = container.getCurrentRequestedMips();
+                double cur_container_requested_mips = containerCurrentRequestedMips.get(0) * containerCurrentRequestedMips.size();
+                //Log.formatLine("CHRIS_NOTE: No. container %d requested mips currently is %.2f."
+                //       , container.getId(), cur_container_requested_mips);
+                requestedMipsTemp += cur_container_requested_mips;
 //                Log.formatLine(
 //                        " [Container #%d] utilization is %.2f",
 //                        contianer.getId() ,
@@ -290,8 +293,8 @@ public class ContainerVm {
 
         for (int i = 0; i < getNumberOfPes(); i++) {
             currentRequestedMips.add(requestedMipsTemp);
-        }
-        //Log.printLine("Vm: get Current requested Mips" + currentRequestedMips);
+        }//chris note: cannot understand the logic.
+        Log.printLine("Vm id: " + getId() + " Current requested Mips" + currentRequestedMips);
         return currentRequestedMips;
     }
 

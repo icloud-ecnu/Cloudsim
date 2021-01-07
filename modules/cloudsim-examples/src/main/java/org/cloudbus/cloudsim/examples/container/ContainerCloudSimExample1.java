@@ -415,6 +415,7 @@ public class ContainerCloudSimExample1 {
         UtilizationModelNull utilizationModelNull = new UtilizationModelNull();
         java.io.File inputFolder1 = new java.io.File(inputFolderName);
         java.io.File[] files1 = inputFolder1.listFiles();
+        Log.formatLine("%s", inputFolderName);
         int createdCloudlets = 0;
         for (java.io.File aFiles1 : files1) {
             java.io.File inputFolder = new java.io.File(aFiles1.toString());

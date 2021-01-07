@@ -171,6 +171,14 @@ public class CloudletSchedulerDynamicWorkload extends CloudletSchedulerTimeShare
 
 	@Override
 	public double getTotalCurrentRequestedMipsForCloudlet(ResCloudlet rcl, double time) {
+		/*chris note:
+		rcl type: ResCloudlet
+		rcl.gettype() return value: The cloudlet it belongs to.
+		rcl.gettype().getUtilizationOfCpu(time):
+		-----cloudlet.getUtilizationModelCpu().getUtilization(time);
+		--------utilizationModelCpu.getUtilization(time);
+		return value: Current utilization, [0, 1], double.
+		 */
 		return rcl.getCloudlet().getUtilizationOfCpu(time) * getTotalMips();
 	}
 
@@ -195,7 +203,14 @@ public class CloudletSchedulerDynamicWorkload extends CloudletSchedulerTimeShare
 		double totalCurrentRequestedMips = getTotalCurrentRequestedMipsForCloudlet(rcl, time);
 		double totalCurrentAvailableMips = getTotalCurrentAvailableMipsForCloudlet(rcl, getCurrentMipsShare());
 		if (totalCurrentRequestedMips > totalCurrentAvailableMips) {
+			/* chris note:
+			if totalCurrentRequestedMips is larger than totalCurrentAvailableMips, we need to do the scale-up/down.
+			 */
+			Log.formatLine("chris note: Now the requested mips is larger than the available mips: 1");
 			return totalCurrentAvailableMips;
+		}
+		else{
+			Log.formatLine("chris note: Now the requested mips is smaller than the available mips: 0");
 		}
 		return totalCurrentRequestedMips;
 	}
