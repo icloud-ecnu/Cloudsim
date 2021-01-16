@@ -483,7 +483,9 @@ public class ContainerDatacenterBroker extends SimEntity {
 //
 //                    }
                     containerIndex++;
-                    sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+                    //chris modification:
+                    //sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+                    send(getDatacenterIdsList().get(0), cloudlet.getExecStartTime(), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
                     cloudletsSubmitted++;
                     getCloudletSubmittedList().add(cloudlet);
                     successfullySubmitted.add(cloudlet);

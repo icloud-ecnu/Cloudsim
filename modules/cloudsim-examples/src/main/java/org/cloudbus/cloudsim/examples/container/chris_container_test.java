@@ -10,7 +10,7 @@ package org.cloudbus.cloudsim.examples.container;
  * Copyright (c) 2009, The University of Melbourne, Australia
  */
 
-
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Storage;
@@ -36,7 +36,8 @@ import org.cloudbus.cloudsim.container.schedulers.ContainerVmSchedulerTimeShared
 import org.cloudbus.cloudsim.container.utils.IDs;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicy;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicyMaximumUsage;
-import org.cloudbus.cloudsim.core.CloudSim;
+
+//import org.cloudbus.cloudsim.core.CloudSim;
 
 import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
@@ -79,7 +80,7 @@ public class chris_container_test {
      */
 
     public static void main(String[] args) {
-        Log.printLine("Starting ContainerCloudSimExample1...");
+        Log.printLine("Starting chris_container_test...");
 
         try {
             /**
@@ -100,7 +101,7 @@ public class chris_container_test {
              */
 
 
-            CloudSim.init(num_user, calendar, trace_flag);
+            CloudSim.init(num_user, calendar, trace_flag, 30);
             /**
              * 2-  Defining the container allocation Policy. This policy determines how Containers are
              * allocated to VMs in the data center.
@@ -156,8 +157,11 @@ public class chris_container_test {
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
              */
             cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
+
             containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
             vmList = createVmList(brokerId, ConstantsExamples.NUMBER_VMS);
+            Log.formatLine("------CHRIS VERIFY: CloudLet number: " + cloudletList.size() + " container number: "
+                    + containerList.size() + " vm number: " + vmList.size());
             /**
              * 10- The address for logging the statistics of the VMs, containers in the data center.
              */
@@ -166,7 +170,7 @@ public class chris_container_test {
             @SuppressWarnings("unused")
             PowerContainerDatacenter e = (PowerContainerDatacenter) createDatacenter("datacenter",
                     PowerContainerDatacenterCM.class, hostList, vmAllocationPolicy, containerAllocationPolicy,
-                    getExperimentName("ContainerCloudSimExample-1", String.valueOf(overBookingFactor)),
+                    getExperimentName("CHRIS_TEST", String.valueOf(overBookingFactor)),
                     ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
                     ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
 
@@ -175,16 +179,25 @@ public class chris_container_test {
              * 11- Submitting the cloudlet's , container's , and VM's lists to the broker.
              */
             broker.submitCloudletList(cloudletList.subList(0, containerList.size()));
-            broker.submitContainerList(containerList);
+            broker.submitContainerList(containerList.subList(0, containerList.size()));
             broker.submitVmList(vmList);
             /**
              * 12- Determining the simulation termination time according to the cloudlet's workload.
              */
-            CloudSim.terminateSimulation(86400.00);
+            CloudSim.terminateSimulation(ConstantsExamples.SIMULATION_LIMIT);
             /**
              * 13- Starting the simualtion.
              */
             CloudSim.startSimulation();
+            //chris note: cloudsim clock can only be used in simulation.
+//            double current_time = CloudSim.clock();
+//            Log.formatLine("current time is: " + current_time);
+//            while(CloudSim.clock() < current_time + 10){
+//                Log.formatLine("clock is: " + CloudSim.clock());
+//            }
+//            Log.formatLine("Here..");
+//            broker.submitCloudletList(cloudletList.subList(containerList.size() - 2, containerList.size()));
+//            broker.submitContainerList(containerList.subList(containerList.size() - 2, containerList.size()));
             /**
              * 14- Stopping the simualtion.
              */
@@ -251,11 +264,13 @@ public class chris_container_test {
      */
     private static void printCloudletList(List<ContainerCloudlet> list) {
         int size = list.size();
+        Log.printLine();
+        Log.printLine("========== OUTPUT ==========");
+        Log.printLine("The cloulet size is:" + size);
         Cloudlet cloudlet;
 
         String indent = "    ";
-        Log.printLine();
-        Log.printLine("========== OUTPUT ==========");
+
         Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
                 + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
                 + "Start Time" + indent + "Finish Time");
@@ -264,10 +279,8 @@ public class chris_container_test {
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
             Log.print(indent + cloudlet.getCloudletId() + indent + indent);
-
             if (cloudlet.getCloudletStatusString() == "Success") {
                 Log.print("SUCCESS");
-
                 Log.printLine(indent + indent + cloudlet.getResourceId()
                         + indent + indent + indent + cloudlet.getVmId()
                         + indent + indent
@@ -290,7 +303,7 @@ public class chris_container_test {
 
         for (int i = 0; i < containerVmsNumber; ++i) {
             ArrayList<ContainerPe> peList = new ArrayList<ContainerPe>();
-            int vmType = i / (int) Math.ceil((double) containerVmsNumber / 4.0D);
+            int vmType = i / (int) Math.ceil((double) containerVmsNumber / ConstantsExamples.VM_TYPES);
             for (int j = 0; j < ConstantsExamples.VM_PES[vmType]; ++j) {
                 peList.add(new ContainerPe(j,
                         new CotainerPeProvisionerSimple((double) ConstantsExamples.VM_MIPS[vmType])));
@@ -302,10 +315,7 @@ public class chris_container_test {
                     new ContainerRamProvisionerSimple(ConstantsExamples.VM_RAM[vmType]),
                     new ContainerBwProvisionerSimple(ConstantsExamples.VM_BW),
                     peList, ConstantsExamples.SCHEDULING_INTERVAL));
-
-
         }
-
         return containerVms;
     }
 
@@ -320,7 +330,7 @@ public class chris_container_test {
     public static List<ContainerHost> createHostList(int hostsNumber) {
         ArrayList<ContainerHost> hostList = new ArrayList<ContainerHost>();
         for (int i = 0; i < hostsNumber; ++i) {
-            int hostType = i / (int) Math.ceil((double) hostsNumber / 3.0D);
+            int hostType = i / (int) Math.ceil((double) hostsNumber / ConstantsExamples.HOST_TYPES);
             ArrayList<ContainerVmPe> peList = new ArrayList<ContainerVmPe>();
             for (int j = 0; j < ConstantsExamples.HOST_PES[hostType]; ++j) {
                 peList.add(new ContainerVmPe(j,
@@ -387,9 +397,11 @@ public class chris_container_test {
     public static List<Container> createContainerList(int brokerId, int containersNumber) {
         ArrayList<Container> containers = new ArrayList<Container>();
         for (int i = 0; i < containersNumber; ++i) {
-            int containerType = i / (int) Math.ceil((double) containersNumber / 3.0D);
-            containers.add(new PowerContainer(IDs.pollId(Container.class), brokerId, (double) ConstantsExamples.CONTAINER_MIPS[containerType], ConstantsExamples.
-                    CONTAINER_PES[containerType], ConstantsExamples.CONTAINER_RAM[containerType], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
+            int containerType = i / (int) Math.ceil((double) containersNumber / ConstantsExamples.CONTAINER_TYPES);
+            containers.add(new PowerContainer(IDs.pollId(Container.class),
+                    brokerId,
+                    (double) ConstantsExamples.CONTAINER_MIPS[containerType],
+                    ConstantsExamples.CONTAINER_PES[containerType], ConstantsExamples.CONTAINER_RAM[containerType], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
                     new ContainerCloudletSchedulerDynamicWorkload(ConstantsExamples.CONTAINER_MIPS[containerType], ConstantsExamples.CONTAINER_PES[containerType]), ConstantsExamples.SCHEDULING_INTERVAL));
         }
         return containers;
@@ -412,24 +424,28 @@ public class chris_container_test {
         UtilizationModelStochastic UtilizationModelStochastic = new UtilizationModelStochastic();
         java.io.File inputFolder1 = new java.io.File(inputFolderName);
         java.io.File[] files1 = inputFolder1.listFiles();
-        Log.formatLine("%s", inputFolderName);
+        Log.formatLine("%s， file number: %d", inputFolderName, files1.length);
         int createdCloudlets = 0;
         for (java.io.File aFiles1 : files1) {
             java.io.File inputFolder = new java.io.File(aFiles1.toString());
             java.io.File[] files = inputFolder.listFiles();
             for (int i = 0; i < files.length; ++i) {
+                Log.formatLine("----------------chris: cpu utilization file %s, cloudlet number: %d",files[i].toString(), createdCloudlets);
                 if (createdCloudlets < numberOfCloudlets) {
                     ContainerCloudlet cloudlet = null;
                     try {
                         cloudlet = new ContainerCloudlet(IDs.pollId(ContainerCloudlet.class), ConstantsExamples.CLOUDLET_LENGTH, 1,
                                 fileSize, outputSize,
-                                new UtilizationModelPlanetLabInMemoryExtended(files[i].getAbsolutePath(), 300.0D),
+                                new UtilizationModelPlanetLabInMemoryExtended(files[i].getAbsolutePath(), ConstantsExamples.SCHEDULING_INTERVAL),
+                                //new UtilizationModelStochastic(100000),
                                 UtilizationModelStochastic, UtilizationModelStochastic);
+
                     } catch (Exception var13) {
                         var13.printStackTrace();
                         System.exit(0);
                     }
-
+                    cloudlet.setExecStartTime(CloudSim.clock() + i * 500);
+                    Log.formatLine("chris_note: Cloudlet id:" + cloudlet.getCloudletId() + " exec start time: " + cloudlet.getExecStartTime());
                     cloudlet.setUserId(brokerId);
                     cloudletList.add(cloudlet);
                     createdCloudlets += 1;

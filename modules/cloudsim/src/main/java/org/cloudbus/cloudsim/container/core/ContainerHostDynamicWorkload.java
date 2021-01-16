@@ -70,7 +70,6 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
             }
 
             for (ContainerVm  containerVm : getVmList()) {
-                Log.formatLine("----------------------CHRIS: Update one VM STARTS-----------------------------");
                 double totalRequestedMips = containerVm.getCurrentRequestedTotalMips();
                 //the requested mips is for one Vm.
                 double totalAllocatedMips = getContainerVmScheduler().getTotalAllocatedMipsForContainerVm(containerVm);
@@ -102,32 +101,8 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
                 if (getVmsMigratingIn().contains(containerVm)) {
                     Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + containerVm.getId()
                             + " is being migrated to Host #" + getId(), CloudSim.clock());
-                } else {
-                    if (totalAllocatedMips + 0.1 < totalRequestedMips) {
-                        //chris note: do scale-up/down here. When the allocated mips cannot satisfy the requested,
-                        // create a new containerVM exactly same with the current one.
-
-                        Log.formatLine("\n CHRIS_NOTE: Current host id: %d, VM id: %d, CURRENT ALLOCATED MIPS IS: %.2f, REQUESTED MIPS IS: %.2f \n "
-                                , getId(), containerVm.getId(), totalAllocatedMips, totalRequestedMips);
-                        List<Container> clist = containerVm.getContainerList();
-                        //double migration_mips = 0.0;
-                        //how to scale up/down ??
-                        Log.formatLine("On this VM, there are %d containers and PeNum is %d.", containerVm.getNumberOfContainers(), containerVm.getNumberOfPes());
-                        for(Container c : clist){
-                            Log.formatLine("No. container %d, requested mips: %.2f, PesNumber: %d "
-                                    , c.getId(), c.getCurrentRequestedTotalMips(), c.getNumberOfPes());
-                            for(ResCloudlet workload : c.getContainerCloudletScheduler().getCloudletExecList()) {
-                                Log.formatLine("-------No. container %d executes the Cloudlet : %d, remaining length: %d"
-                                        , c.getId(), workload.getCloudletId(), workload.getRemainingCloudletLength());
-                            }
-                        }
-
-                        //getContainerVmScheduler().allocatePesForVm();
-                        Log.formatLine("----------------------CHRIS: Update one VM END----------------------------");
-                        //Log.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + containerVm.getId()
-                               // + ": %.2f", CloudSim.clock(), totalRequestedMips - totalAllocatedMips);
-                    }
-
+                }
+                else{
                     containerVm.addStateHistoryEntry(
                             currentTime,
                             totalAllocatedMips,

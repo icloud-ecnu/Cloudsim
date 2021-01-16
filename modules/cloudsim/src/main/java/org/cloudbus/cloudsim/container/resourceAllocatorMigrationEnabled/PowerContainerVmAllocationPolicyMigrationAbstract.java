@@ -188,7 +188,8 @@ public abstract class PowerContainerVmAllocationPolicyMigrationAbstract extends 
      */
     protected void printOverUtilizedHosts(List<PowerContainerHostUtilizationHistory> overUtilizedHosts) {
         if (!Log.isDisabled()) {
-            Log.printLine("Over-utilized hosts:");
+            if(overUtilizedHosts.size() != 0)
+                Log.printLine("Over-utilized hosts:");
             for (PowerContainerHostUtilizationHistory host : overUtilizedHosts) {
                 Log.printConcatLine("Host #", host.getId());
             }

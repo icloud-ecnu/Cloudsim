@@ -52,7 +52,7 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
     @Override
     protected void updateCloudletProcessing() {
 
-        //        Log.printLine("Power data center is Updating the cloudlet processing");
+        // Log.printLine("Power data center is Updating the cloudlet processing");
         if (getCloudletSubmitted() == -1 || getCloudletSubmitted() == CloudSim.clock()) {
             CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.VM_DATACENTER_EVENT));
             schedule(getId(), getSchedulingInterval(), CloudSimTags.VM_DATACENTER_EVENT);
@@ -62,8 +62,8 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
 
         // if some time passed since last processing
         if (currentTime > getLastProcessTime()) {
-            System.out.print(currentTime + " ");
-
+            //System.out.print(currentTime + " ");
+            Log.formatLine("FUNC: updateCloudProcessing: current time, " + currentTime);
             double minTime = updateCloudetProcessingWithoutSchedulingFutureEventsForce();
 
             if (!isDisableMigrations()) {
@@ -133,8 +133,6 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                                             containerStartupDelay + vmStartupDelay
                                             , containerCloudSimTags.CONTAINER_MIGRATE,
                                             migrate);
-
-
                                 }
 
 
@@ -144,8 +142,6 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                                         containerStartupDelay,
                                         containerCloudSimTags.CONTAINER_MIGRATE,
                                         migrate);
-
-
                             }
                         } else {
                             ContainerVm vm = (ContainerVm) migrate.get("vm");
@@ -215,7 +211,6 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                     e.printStackTrace();
                 }
             }
-
 
             // schedules an event to the next time
             if (minTime != Double.MAX_VALUE) {

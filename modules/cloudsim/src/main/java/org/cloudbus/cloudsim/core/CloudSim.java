@@ -526,10 +526,18 @@ public class CloudSim {
 				
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
+			Log.formatLine("chris note CLOUDSIM future size: " + future.size());
 			List<SimEvent> toRemove = new ArrayList<SimEvent>();
 			Iterator<SimEvent> fit = future.iterator();
 			queue_empty = false;
+			//check the first satisfied event on account of current time.
 			SimEvent first = fit.next();
+			//Log.formatLine(first.getData().getClass());
+			//if(first.toString().indexOf("Cloudlet") != -1){
+				Log.formatLine("Eventtime is: " + first.eventTime() + " And clock is:" + CloudSim.clock());
+				if(first.eventTime()  < CloudSim.clock())
+					return queue_empty;
+			//}
 			processEvent(first);
 			future.remove(first);
 
@@ -606,8 +614,8 @@ public class CloudSim {
 		if(delay >= Double.MAX_VALUE) {
 			throw new RuntimeException("Send delay can't be infinite.");
 		}
-
 		SimEvent e = new SimEvent(SimEvent.SEND, clock + delay, src, dest, tag, data);
+		Log.formatLine("chris note: ADD SEND EVENT, " + e.getData() + " delay is:" + delay);
 		future.addEvent(e);
 	}
 

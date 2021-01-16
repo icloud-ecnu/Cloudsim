@@ -294,7 +294,7 @@ public class ContainerVm {
         for (int i = 0; i < getNumberOfPes(); i++) {
             currentRequestedMips.add(requestedMipsTemp);
         }//chris note: cannot understand the logic.
-        Log.printLine("Vm id: " + getId() + " Current requested Mips" + currentRequestedMips);
+        //Log.printLine("Vm id: " + getId() + " Current requested Mips" + currentRequestedMips);
         return currentRequestedMips;
     }
 

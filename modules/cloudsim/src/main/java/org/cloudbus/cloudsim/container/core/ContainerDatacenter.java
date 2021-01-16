@@ -843,7 +843,7 @@ public class ContainerDatacenter extends SimEntity {
             int userId = cl.getUserId();
             int vmId = cl.getVmId();
             int containerId = cl.getContainerId();
-
+            Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "start time: " + cl.getExecStartTime());
             // time to transfer the files
             double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 
@@ -851,8 +851,8 @@ public class ContainerDatacenter extends SimEntity {
             ContainerVm vm = host.getContainerVm(vmId, userId);
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
-
-            // if this cloudlet is in the exec queue
+            Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
+                    // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
                 estimatedFinishTime += fileTransferTime;
                 send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);

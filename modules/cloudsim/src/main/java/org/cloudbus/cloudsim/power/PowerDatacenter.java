@@ -87,8 +87,8 @@ public class PowerDatacenter extends Datacenter {
 
 		// if some time passed since last processing
 		if (currentTime > getLastProcessTime()) {
-			System.out.print(currentTime + " ");
-
+			//System.out.print(currentTime + " ");
+			Log.formatLine("FUNC: updateCloudProcessing: current time, " + currentTime);
 			double minTime = updateCloudetProcessingWithoutSchedulingFutureEventsForce();
 
 			if (!isDisableMigrations()) {

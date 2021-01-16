@@ -418,7 +418,7 @@ public class Cloudlet {
      * @pre cloudletOutputSize >= 1
      * @post $none
      */
-    public Cloudlet(
+    public Cloudlet (
             final int cloudletId,
             final long cloudletLength,
             final int pesNumber,
