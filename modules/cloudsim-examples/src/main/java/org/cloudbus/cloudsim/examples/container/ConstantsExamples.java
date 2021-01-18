@@ -46,6 +46,8 @@ public class ConstantsExamples {
      */
 
     public static final int CONTAINER_TYPES = 1;
+    //chris add:
+    public static final int NUMBER_CONTAINERS = 4;
     public static final int[] CONTAINER_MIPS = new int[]{100};
     public static final int[] CONTAINER_PES = new int[]{1};
     public static final int[] CONTAINER_RAM = new int[]{128};

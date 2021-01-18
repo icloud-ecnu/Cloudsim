@@ -36,6 +36,8 @@ import org.cloudbus.cloudsim.container.schedulers.ContainerVmSchedulerTimeShared
 import org.cloudbus.cloudsim.container.utils.IDs;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicy;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicyMaximumUsage;
+import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
+//import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.NormalDistribution;
 
 //import org.cloudbus.cloudsim.core.CloudSim;
 
@@ -156,9 +158,12 @@ public class chris_container_test {
             /**
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
              */
-            cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
-
-            containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
+            //cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
+            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(101, 10,
+                10,
+                1000, 100);
+            cloudletList = self_design_distribution.GetWorkloads();
+            containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CONTAINERS);
             vmList = createVmList(brokerId, ConstantsExamples.NUMBER_VMS);
             Log.formatLine("------CHRIS VERIFY: CloudLet number: " + cloudletList.size() + " container number: "
                     + containerList.size() + " vm number: " + vmList.size());
@@ -178,7 +183,7 @@ public class chris_container_test {
             /**
              * 11- Submitting the cloudlet's , container's , and VM's lists to the broker.
              */
-            broker.submitCloudletList(cloudletList.subList(0, containerList.size()));
+            broker.submitCloudletList(cloudletList);
             broker.submitContainerList(containerList.subList(0, containerList.size()));
             broker.submitVmList(vmList);
             /**
@@ -190,14 +195,6 @@ public class chris_container_test {
              */
             CloudSim.startSimulation();
             //chris note: cloudsim clock can only be used in simulation.
-//            double current_time = CloudSim.clock();
-//            Log.formatLine("current time is: " + current_time);
-//            while(CloudSim.clock() < current_time + 10){
-//                Log.formatLine("clock is: " + CloudSim.clock());
-//            }
-//            Log.formatLine("Here..");
-//            broker.submitCloudletList(cloudletList.subList(containerList.size() - 2, containerList.size()));
-//            broker.submitContainerList(containerList.subList(containerList.size() - 2, containerList.size()));
             /**
              * 14- Stopping the simualtion.
              */
@@ -208,7 +205,7 @@ public class chris_container_test {
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
             printCloudletList(newList);
 
-            Log.printLine("ContainerCloudSimExample1 finished!");
+            Log.printLine("CHRIS CONTAINER TEST finished!");
         } catch (Exception e) {
             e.printStackTrace();
             Log.printLine("Unwanted errors happen");
@@ -430,7 +427,7 @@ public class chris_container_test {
             java.io.File inputFolder = new java.io.File(aFiles1.toString());
             java.io.File[] files = inputFolder.listFiles();
             for (int i = 0; i < files.length; ++i) {
-                Log.formatLine("----------------chris: cpu utilization file %s, cloudlet number: %d",files[i].toString(), createdCloudlets);
+               // Log.formatLine("----------------chris: cpu utilization file %s, cloudlet number: %d",files[i].toString(), createdCloudlets);
                 if (createdCloudlets < numberOfCloudlets) {
                     ContainerCloudlet cloudlet = null;
                     try {
