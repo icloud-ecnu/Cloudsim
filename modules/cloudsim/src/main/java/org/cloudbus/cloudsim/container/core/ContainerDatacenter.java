@@ -793,6 +793,7 @@ public class ContainerDatacenter extends SimEntity {
         }
     }
 
+
     /**
      * Processes a Cloudlet submission.
      *
@@ -806,7 +807,6 @@ public class ContainerDatacenter extends SimEntity {
 
         try {
             ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
-
             // checks whether this Cloudlet has finished or not
             if (cl.isFinished()) {
                 String name = CloudSim.getEntityName(cl.getUserId());
@@ -830,9 +830,7 @@ public class ContainerDatacenter extends SimEntity {
                     int tag = CloudSimTags.CLOUDLET_SUBMIT_ACK;
                     sendNow(cl.getUserId(), tag, data);
                 }
-
                 sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
-
                 return;
             }
 
@@ -843,7 +841,18 @@ public class ContainerDatacenter extends SimEntity {
             int userId = cl.getUserId();
             int vmId = cl.getVmId();
             int containerId = cl.getContainerId();
-            Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "start time: " + cl.getExecStartTime());
+            //Chris tuning container:
+            if(containerId < 0){
+                this.getCharacteristics().
+                  BindingBeforeSubmit(cl);
+//                while(BindingBeforeSubmit(cl) < 0){
+//                    ProcessContainerCreate();
+//                }
+//                cl.setContainerId(ScheduleCloudletToContainer(cl));
+
+            }
+            Log.formatLine("chris note: cloudlet id: " + cl.getCloudletId() + " container id: " + containerId
+                    + " VM id: " + cl.getVmId() +  " start time: " + cl.getExecStartTime());
             // time to transfer the files
             double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 

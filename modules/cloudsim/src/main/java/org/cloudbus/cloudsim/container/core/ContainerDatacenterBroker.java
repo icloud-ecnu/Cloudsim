@@ -356,36 +356,9 @@ public class ContainerDatacenterBroker extends SimEntity {
         }
 
         incrementVmsAcks();
-//        if (getVmsCreatedList().size() == getVmList().size() - getVmsDestroyed()) {
-//        If we have tried creating all of the vms in the data center, we submit the containers.
         if(getVmList().size() == vmsAcks){
-
             submitContainers();
         }
-//        // all the requested VMs have been created
-//        if (getVmsCreatedList().size() == getVmList().size() - getVmsDestroyed()) {
-//            submitCloudlets();
-//        } else {
-//            // all the acks received, but some VMs were not created
-//            if (getVmsRequested() == getVmsAcks()) {
-//                // find id of the next datacenter that has not been tried
-//                for (int nextDatacenterId : getDatacenterIdsList()) {
-//                    if (!getDatacenterRequestedIdsList().contains(nextDatacenterId)) {
-//                        createVmsInDatacenter(nextDatacenterId);
-//                        return;
-//                    }
-//                }
-//
-//                // all datacenters already queried
-//                if (getVmsCreatedList().size() > 0) { // if some vm were created
-//                    submitCloudlets();
-//                } else { // no vms created. abort
-//                    Log.printLine(CloudSim.clock() + ": " + getName()
-//                            + ": none of the required VMs could be created. Aborting");
-//                    finishExecution();
-//                }
-//            }
-//        }
     }
 
     /**
@@ -471,7 +444,7 @@ public class ContainerDatacenterBroker extends SimEntity {
         for (ContainerCloudlet cloudlet : getCloudletList()) {
             //Log.printLine("Containers Created" + getContainersCreated());
             if (containerIndex < getContainersCreated()) {
-                    //Log.printLine("Container Index" + containerIndex);
+                //Log.printLine("Container Index" + containerIndex);
 //                    int containerId = getContainersCreatedList().get(containerIndex).getId();
 //                    bindCloudletToContainer(cloudlet.getCloudletId(), containerId);
                 if(getContainersToVmsMap().get(cloudlet.getContainerId()) != null) {
@@ -483,9 +456,7 @@ public class ContainerDatacenterBroker extends SimEntity {
 //
 //                    }
                     containerIndex++;
-                    //chris modification:
-                    //sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
-                    send(getDatacenterIdsList().get(0), cloudlet.getExecStartTime(), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+                    sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
                     cloudletsSubmitted++;
                     getCloudletSubmittedList().add(cloudlet);
                     successfullySubmitted.add(cloudlet);

@@ -121,6 +121,8 @@ public class CloudletSchedulerDynamicWorkload extends CloudletSchedulerTimeShare
 		return cloudletSubmit(cl, 0);
 	}
 
+
+
 	@Override
 	public double cloudletSubmit(Cloudlet cl, double fileTransferTime) {
 		ResCloudlet rcl = new ResCloudlet(cl);

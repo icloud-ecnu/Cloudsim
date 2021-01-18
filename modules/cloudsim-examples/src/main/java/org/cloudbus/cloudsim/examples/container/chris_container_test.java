@@ -153,7 +153,7 @@ public class chris_container_test {
              * allocation process.
              */
             int overBookingFactor = 80;
-            ContainerDatacenterBroker broker = createBroker(overBookingFactor);
+            ContainerScalabilityBroker broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
             /**
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
@@ -245,7 +245,7 @@ public class chris_container_test {
         ContainerDatacenterBroker broker = null;
 
         try {
-            broker = new ContainerDatacenterBroker("Broker", overBookingFactor);
+            broker = new ContainerScalabilityBroker("Broker", overBookingFactor);
         } catch (Exception var2) {
             var2.printStackTrace();
             System.exit(0);

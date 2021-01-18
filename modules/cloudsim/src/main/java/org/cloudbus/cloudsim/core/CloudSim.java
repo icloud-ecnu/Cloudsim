@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudbus.cloudsim.Log;
+import org.cloudbus.cloudsim.container.core.ContainerDatacenterBroker;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
@@ -186,7 +187,6 @@ public class CloudSim {
 		Log.printConcatLine("Starting CloudSim version ", CLOUDSIM_VERSION_STRING);
 		try {
 			double clock = run();
-
 			// reset all static variables
 			cisId = -1;
 			shutdownId = -1;
@@ -514,7 +514,7 @@ public class CloudSim {
 	public static boolean runClockTick() {
 		SimEntity ent;
 		boolean queue_empty;
-		
+		//Log.formatLine("RUN CLOCK TICK: "+ CloudSim.clock());
 		int entities_size = entities.size();
 
 		for (int i = 0; i < entities_size; i++) {
@@ -523,7 +523,6 @@ public class CloudSim {
 				ent.run();
 			}
 		}
-				
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
 			Log.formatLine("chris note CLOUDSIM future size: " + future.size());

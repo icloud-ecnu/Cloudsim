@@ -49,6 +49,12 @@ public class Container {
     private int numberOfPes;
 
     /**
+     * The available number of PEs in this container.
+     */
+    private int available_pes_num;
+
+
+    /**
      * The ram.
      */
     private float ram;
@@ -159,6 +165,7 @@ public class Container {
         setUid(getUid(userId, id));
         setMips(mips);
         setNumberOfPes(numberOfPes);
+        setAvailablePesNum(numberOfPes);
         setRam(ram);
         setBw(bw);
         setSize(size);
@@ -369,12 +376,28 @@ public class Container {
     }
 
     /**
+     *
+     * @param numberOfPes
+     * @return the available number of PEs in this container.
+     */
+    public int getAvailablePesNum() {
+         return this.available_pes_num;
+    }
+    /**
      * Sets the number of pes.
      *
      * @param numberOfPes the new number of pes
      */
     protected void setNumberOfPes(int numberOfPes) {
         this.numberOfPes = numberOfPes;
+    }
+
+    /**
+     * Set/update the available PEs number of this container.
+     * @param numberOfPes
+     */
+    protected void setAvailablePesNum(int numberOfPes){
+        this.available_pes_num = numberOfPes;
     }
 
     /**
