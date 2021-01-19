@@ -290,7 +290,7 @@ public class ContainerCloudSimExample1 {
 
         for (int i = 0; i < containerVmsNumber; ++i) {
             ArrayList<ContainerPe> peList = new ArrayList<ContainerPe>();
-            int vmType = i / (int) Math.ceil((double) containerVmsNumber / 4.0D);
+            int vmType = i / (int) Math.ceil((double) containerVmsNumber / ConstantsExamples.VM_TYPES);
             for (int j = 0; j < ConstantsExamples.VM_PES[vmType]; ++j) {
                 peList.add(new ContainerPe(j,
                         new CotainerPeProvisionerSimple((double) ConstantsExamples.VM_MIPS[vmType])));
@@ -388,7 +388,7 @@ public class ContainerCloudSimExample1 {
         ArrayList<Container> containers = new ArrayList<Container>();
 
         for (int i = 0; i < containersNumber; ++i) {
-            int containerType = i / (int) Math.ceil((double) containersNumber / 3.0D);
+            int containerType = i / (int) Math.ceil((double) containersNumber / ConstantsExamples.CONTAINER_TYPES);
 
             containers.add(new PowerContainer(IDs.pollId(Container.class), brokerId, (double) ConstantsExamples.CONTAINER_MIPS[containerType], ConstantsExamples.
                     CONTAINER_PES[containerType], ConstantsExamples.CONTAINER_RAM[containerType], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
