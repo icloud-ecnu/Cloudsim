@@ -8,6 +8,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.cloudbus.cloudsim.container.core.containerCloudSimTags;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -843,13 +844,10 @@ public class ContainerDatacenter extends SimEntity {
             int containerId = cl.getContainerId();
             //Chris tuning container:
             if(containerId < 0){
-                this.getCharacteristics().
-                  BindingBeforeSubmit(cl);
-//                while(BindingBeforeSubmit(cl) < 0){
-//                    ProcessContainerCreate();
-//                }
-//                cl.setContainerId(ScheduleCloudletToContainer(cl));
-
+                  Log.formatLine("Chris BINDING CLOUDLET: " + CloudSim.clock());
+                  sendNow(cl.getUserId(), containerCloudSimTags.BINDING_CLOUDLET, cl);
+                  //sendNow(getId(), CloudSimTags.CLOUDLET_SUBMIT, cl);
+                  return;
             }
             Log.formatLine("chris note: cloudlet id: " + cl.getCloudletId() + " container id: " + containerId
                     + " VM id: " + cl.getVmId() +  " start time: " + cl.getExecStartTime());
@@ -896,7 +894,6 @@ public class ContainerDatacenter extends SimEntity {
      */
     protected double predictFileTransferTime(List<String> requiredFiles) {
         double time = 0.0;
-
         for (String fileName : requiredFiles) {
             for (int i = 0; i < getStorageList().size(); i++) {
                 Storage tempStorage = getStorageList().get(i);

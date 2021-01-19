@@ -579,6 +579,7 @@ public class ContainerDatacenterBroker extends SimEntity {
             successfullySubmitted.add(container);
 
         }
+        
         sendNow(getDatacenterIdsList().get(0), containerCloudSimTags.CONTAINER_SUBMIT, successfullySubmitted);
 
 //        List<Container> successfullySubmitted = new ArrayList<>();

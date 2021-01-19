@@ -35,11 +35,11 @@ public class ConstantsExamples {
      */
 
     public static final int VM_TYPES = 1;
-    public static final double[] VM_MIPS = new double[]{100};
-    public static final int[] VM_PES = new int[]{2};
-    public static final float[] VM_RAM = new float[] {(float)1024};//**MB*
-    public static final int VM_BW = 100000;
-    public static final int VM_SIZE = 2500;
+    public static final double[] VM_MIPS = new double[]{1000};
+    public static final int[] VM_PES = new int[]{200};
+    public static final float[] VM_RAM = new float[] {(float)10240};//**MB*
+    public static final int VM_BW = 1000000;
+    public static final int VM_SIZE = 25000;
 
     /**
      * The available types of container along with the specs.
@@ -48,9 +48,9 @@ public class ConstantsExamples {
     public static final int CONTAINER_TYPES = 1;
     //chris add:
     public static final int NUMBER_CONTAINERS = 4;
-    public static final int[] CONTAINER_MIPS = new int[]{100};
-    public static final int[] CONTAINER_PES = new int[]{1};
-    public static final int[] CONTAINER_RAM = new int[]{128};
+    public static final int[] CONTAINER_MIPS = new int[]{1};
+    public static final int[] CONTAINER_PES = new int[]{4};
+    public static final int[] CONTAINER_RAM = new int[]{1};
     public static final int CONTAINER_BW = 2500;
 
     /**
@@ -58,10 +58,10 @@ public class ConstantsExamples {
      */
 
     public static final int HOST_TYPES = 1;
-    public static final int[] HOST_MIPS = new int[]{100};
-    public static final int[] HOST_PES = new int[]{4};
-    public static final int[] HOST_RAM = new int[]{65536};
-    public static final int HOST_BW = 1000000;
+    public static final int[] HOST_MIPS = new int[]{1001};
+    public static final int[] HOST_PES = new int[]{501};
+    public static final int[] HOST_RAM = new int[]{10241};
+    public static final int HOST_BW = 1000001;
     public static final int HOST_STORAGE = 1000000;
     public static final PowerModel[] HOST_POWER = new PowerModel[]{new PowerModelSpecPowerHpProLiantMl110G4Xeon3040(),
             new PowerModelSpecPowerHpProLiantMl110G5Xeon3075(), new PowerModelSpecPowerIbmX3550XeonX5670()};

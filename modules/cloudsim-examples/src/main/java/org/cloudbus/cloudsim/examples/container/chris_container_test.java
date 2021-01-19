@@ -76,6 +76,11 @@ public class chris_container_test {
     private static List<ContainerHost> hostList;
 
     /**
+     * The container datacenter broker.
+     */
+    private static ContainerScalabilityBroker broker;
+
+    /**
      * Creates main() to run this example.
      *
      * @param args the args
@@ -153,7 +158,7 @@ public class chris_container_test {
              * allocation process.
              */
             int overBookingFactor = 80;
-            ContainerScalabilityBroker broker = createBroker(overBookingFactor);
+            broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
             /**
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
@@ -163,6 +168,9 @@ public class chris_container_test {
                 10,
                 1000, 100);
             cloudletList = self_design_distribution.GetWorkloads();
+            for(ContainerCloudlet cl : cloudletList){
+                cl.setUserId(brokerId);
+            }
             containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CONTAINERS);
             vmList = createVmList(brokerId, ConstantsExamples.NUMBER_VMS);
             Log.formatLine("------CHRIS VERIFY: CloudLet number: " + cloudletList.size() + " container number: "
@@ -240,12 +248,17 @@ public class chris_container_test {
      * @param overBookingFactor
      * @return the datacenter broker
      */
-    private static ContainerDatacenterBroker createBroker(int overBookingFactor) {
+    private static ContainerScalabilityBroker createBroker(int overBookingFactor) {
 
-        ContainerDatacenterBroker broker = null;
+        ContainerScalabilityBroker broker = null;
 
         try {
-            broker = new ContainerScalabilityBroker("Broker", overBookingFactor);
+            Container c = new PowerContainer(IDs.pollId(Container.class),
+                    -1,
+                    (double) ConstantsExamples.CONTAINER_MIPS[0],
+                    ConstantsExamples.CONTAINER_PES[0], ConstantsExamples.CONTAINER_RAM[0], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
+                    new ContainerCloudletSchedulerDynamicWorkload(ConstantsExamples.CONTAINER_MIPS[0], ConstantsExamples.CONTAINER_PES[0]), ConstantsExamples.SCHEDULING_INTERVAL);
+            broker = new ContainerScalabilityBroker("Broker", overBookingFactor, c);
         } catch (Exception var2) {
             var2.printStackTrace();
             System.exit(0);

@@ -41,18 +41,18 @@ public class BaseRequestDistribution {
         required_workloads = new ArrayList<ContainerCloudlet>();
         int CloudletID = 0;
         //Container Cloudlet generation.
-        String inputFolderName = ContainerCloudSimExample1.class.getClassLoader().getResource("workload/planetlab").getPath();
-        ArrayList<String> file_path = new ArrayList<String>();
-        java.io.File inputFolder1 = new java.io.File(inputFolderName);
-        java.io.File[] files1 = inputFolder1.listFiles();
-        for (java.io.File aFiles1 : files1) {
-            java.io.File inputFolder = new java.io.File(aFiles1.toString());
-            java.io.File[] files = inputFolder.listFiles();
-            for (int i = 0; i < files.length; ++i){
-//                Log.formatLine(files[i].getAbsolutePath());
-                file_path.add(files[i].getAbsolutePath());
-            }
-        }
+//        String inputFolderName = ContainerCloudSimExample1.class.getClassLoader().getResource("workload/planetlab").getPath();
+//        ArrayList<String> file_path = new ArrayList<String>();
+//        java.io.File inputFolder1 = new java.io.File(inputFolderName);
+//        java.io.File[] files1 = inputFolder1.listFiles();
+//        for (java.io.File aFiles1 : files1) {
+//            java.io.File inputFolder = new java.io.File(aFiles1.toString());
+//            java.io.File[] files = inputFolder.listFiles();
+//            for (int i = 0; i < files.length; ++i){
+////                Log.formatLine(files[i].getAbsolutePath());
+//                file_path.add(files[i].getAbsolutePath());
+//            }
+//        }
 //        Log.formatLine("File Path: " + file_path.size());
         for(int cur_time = 0; cur_time < terminated_time; cur_time += interval_length) {
             int RequestNum = RequestNum_distribution.GetNextPoisson();
