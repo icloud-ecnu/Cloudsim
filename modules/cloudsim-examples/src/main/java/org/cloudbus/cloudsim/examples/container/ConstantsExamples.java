@@ -36,10 +36,10 @@ public class ConstantsExamples {
 
     public static final int VM_TYPES = 1;
     public static final double[] VM_MIPS = new double[]{1000};
-    public static final int[] VM_PES = new int[]{200};
+    public static final int[] VM_PES = new int[]{2000};
     public static final float[] VM_RAM = new float[] {(float)10240};//**MB*
-    public static final int VM_BW = 1000000;
-    public static final int VM_SIZE = 25000;
+    public static final int VM_BW = 10000;
+    public static final int VM_SIZE = 20000;
 
     /**
      * The available types of container along with the specs.
@@ -49,18 +49,18 @@ public class ConstantsExamples {
     //chris add:
     public static final int NUMBER_CONTAINERS = 4;
     public static final int[] CONTAINER_MIPS = new int[]{1};
-    public static final int[] CONTAINER_PES = new int[]{4};
-    public static final int[] CONTAINER_RAM = new int[]{1};
-    public static final int CONTAINER_BW = 2500;
+    public static final int[] CONTAINER_PES = new int[]{1};
+    public static final int[] CONTAINER_RAM = new int[]{10};
+    public static final int CONTAINER_BW = 1;
 
     /**
      * The available types of hosts along with the specs.
      */
 
     public static final int HOST_TYPES = 1;
-    public static final int[] HOST_MIPS = new int[]{1001};
-    public static final int[] HOST_PES = new int[]{501};
-    public static final int[] HOST_RAM = new int[]{10241};
+    public static final int[] HOST_MIPS = new int[]{2001};
+    public static final int[] HOST_PES = new int[]{1001};
+    public static final int[] HOST_RAM = new int[]{20241};
     public static final int HOST_BW = 1000001;
     public static final int HOST_STORAGE = 1000000;
     public static final PowerModel[] HOST_POWER = new PowerModel[]{new PowerModelSpecPowerHpProLiantMl110G4Xeon3040(),

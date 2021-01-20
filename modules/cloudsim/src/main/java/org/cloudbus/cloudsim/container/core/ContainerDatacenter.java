@@ -839,16 +839,21 @@ public class ContainerDatacenter extends SimEntity {
             cl.setResourceParameter(getId(), getCharacteristics().getCostPerSecond(), getCharacteristics()
                     .getCostPerBw());
 
-            int userId = cl.getUserId();
-            int vmId = cl.getVmId();
-            int containerId = cl.getContainerId();
+
             //Chris tuning container:
+            int containerId = cl.getContainerId();
             if(containerId < 0){
                   Log.formatLine("Chris BINDING CLOUDLET: " + CloudSim.clock());
                   sendNow(cl.getUserId(), containerCloudSimTags.BINDING_CLOUDLET, cl);
-                  //sendNow(getId(), CloudSimTags.CLOUDLET_SUBMIT, cl);
                   return;
             }
+            int vmId = cl.getVmId();
+            if(vmId < 0){
+                Log.formatLine("Assign the cloudlet to the located container now.");
+                cl.setVmId(getContainerList().get(containerId).getVm().getId());
+                vmId = cl.getVmId();
+            }
+            int userId = cl.getUserId();
             Log.formatLine("chris note: cloudlet id: " + cl.getCloudletId() + " container id: " + containerId
                     + " VM id: " + cl.getVmId() +  " start time: " + cl.getExecStartTime());
             // time to transfer the files
@@ -856,6 +861,7 @@ public class ContainerDatacenter extends SimEntity {
 
             ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
             ContainerVm vm = host.getContainerVm(vmId, userId);
+
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
             Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);

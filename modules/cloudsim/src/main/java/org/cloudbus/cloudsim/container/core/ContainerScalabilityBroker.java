@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.container.core;
 
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.container.utils.IDs;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 
@@ -69,18 +70,16 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         }
     }
 
-
-
-
-
 //
     public void processContainerCreate(ContainerCloudlet cl){
         List<Container> l = new ArrayList<Container>(1);
-        l.add(new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips()
+        Container con = new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips()
                                                 ,const_container.getNumberOfPes(), (int)const_container.getRam(),
                                                 const_container.getBw(), const_container.getSize()
                                                 , const_container.getContainerManager(), const_container.getContainerCloudletScheduler()
-                                                , const_container.getSchedulingInterval()));
+                                                , const_container.getSchedulingInterval());
+        cl.setContainerId(con.getId());
+        l.add(con);
         //how to place container to VM. cannot invoke the non-static methods. unreasonable.
         sendNow(datacenterIdsList.get(0), containerCloudSimTags.CONTAINER_SUBMIT, l);
     }
@@ -91,6 +90,7 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         for(Container container : getContainerList()){
             if (container.getAvailablePesNum() > cl.getNumberOfPes()) {
                 binding = true;
+
                 bindCloudletToContainer(cl.getCloudletId(), container.getId());
                 bindCloudletToVm(cl.getCloudletId(), container.getVm().getId());
             }
@@ -106,11 +106,13 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
 //                cl.setVmId(new_container.getVm().getId());
 //            }
         }
+        send(getDatacenterIdsList().get(0), 5,  CloudSimTags.CLOUDLET_SUBMIT, cl);
     }
 
     @Override
     protected void submitCloudlets(){
         List<ContainerCloudlet> successfullySubmitted = new ArrayList<>();
+
         for (ContainerCloudlet clt : getCloudletList()) {
             send(getDatacenterIdsList().get(0), clt.getExecStartTime(), CloudSimTags.CLOUDLET_SUBMIT, clt);
             cloudletsSubmitted++;
@@ -119,6 +121,33 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         }
         getCloudletList().removeAll(successfullySubmitted);
         successfullySubmitted.clear();
+    }
+
+    @Override
+    protected void processCloudletReturn(SimEvent ev) {
+        ContainerCloudlet cloudlet = (ContainerCloudlet) ev.getData();
+        getCloudletReceivedList().add(cloudlet);
+        Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Cloudlet ", cloudlet.getCloudletId(),
+                " returned");
+        Log.printConcatLine(CloudSim.clock(), ": ", getName(), "The number of finished Cloudlets is:", getCloudletReceivedList().size());
+        cloudletsSubmitted--;
+        //chris add for update available PEs for containers.
+       // int ava = containerList.get(cloudlet.getContainerId()).getAvailablePesNum();
+        //containerList.get(cloudlet.getContainerId()).setAvailablePesNum(ava - cloudlet.getNumberOfPes());
+
+        if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all cloudlets executed
+            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": All Cloudlets executed. Finishing...");
+            clearDatacenters();
+            finishExecution();
+        } else { // some cloudlets haven't finished yet
+            if (getCloudletList().size() > 0 && cloudletsSubmitted == 0) {
+                // all the cloudlets sent finished. It means that some bount
+                // cloudlet is waiting its VM be created
+                clearDatacenters();
+                createVmsInDatacenter(0);
+            }
+
+        }
     }
 
 
