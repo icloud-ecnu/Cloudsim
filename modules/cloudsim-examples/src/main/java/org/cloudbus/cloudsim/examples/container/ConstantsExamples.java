@@ -16,7 +16,7 @@ public class ConstantsExamples {
      */
     public static final boolean ENABLE_OUTPUT = true;
     public static final boolean OUTPUT_CSV = false;
-    public static final double SCHEDULING_INTERVAL = 10.0D;
+    public static final double SCHEDULING_INTERVAL = 10D;
     public static final double SIMULATION_LIMIT = 87400.0D;
     /**
      * Cloudlet specs
@@ -49,7 +49,7 @@ public class ConstantsExamples {
     //chris add:
     public static final int NUMBER_CONTAINERS = 4;
     public static final int[] CONTAINER_MIPS = new int[]{1};
-    public static final int[] CONTAINER_PES = new int[]{1};
+    public static final int[] CONTAINER_PES = new int[]{4};
     public static final int[] CONTAINER_RAM = new int[]{10};
     public static final int CONTAINER_BW = 1;
 

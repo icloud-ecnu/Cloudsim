@@ -108,7 +108,7 @@ public class chris_container_test {
              */
 
 
-            CloudSim.init(num_user, calendar, trace_flag, 30);
+            CloudSim.init(num_user, calendar, trace_flag, 0.1);
             /**
              * 2-  Defining the container allocation Policy. This policy determines how Containers are
              * allocated to VMs in the data center.
@@ -165,7 +165,7 @@ public class chris_container_test {
              */
             //cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(101, 10,
-                10,
+                3,
                 1000, 100);
             cloudletList = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList){

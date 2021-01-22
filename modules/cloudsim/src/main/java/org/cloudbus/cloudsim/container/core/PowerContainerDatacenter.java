@@ -200,14 +200,16 @@ public class PowerContainerDatacenter extends ContainerDatacenter {
      * @return the double
      */
     protected double updateCloudetProcessingWithoutSchedulingFutureEventsForce() {
-//        Log.printLine("Power data center is Updating CloudetProcessingWithoutSchedulingFutureEventsForce");
         double currentTime = CloudSim.clock();
         double minTime = Double.MAX_VALUE;
         double timeDiff = currentTime - getLastProcessTime();
         double timeFrameDatacenterEnergy = 0.0;
 
+
         Log.printLine("\n\n--------------------------------------------------------------\n\n");
         Log.formatLine("Power data center: New resource usage for the time frame starting at %.2f:", currentTime);
+
+
 
         for (PowerContainerHost host : this.<PowerContainerHost>getHostList()) {
             Log.printLine();
@@ -293,12 +295,12 @@ public class PowerContainerDatacenter extends ContainerDatacenter {
         getActiveVmList().add((double) numberOfActiveVms);
         int numberOfContainers = getNumberOfContainers();
         /** Check how many containers are in the system up and running*/
-        Log.print(String.format("The number of Containers Up and running is %d", numberOfContainers));
-        Log.printLine();
-        Log.print(String.format("The number of Vms Up and running is %d", numberOfActiveVms));
-        Log.printLine();
-        Log.print(String.format("The number of Hosts Up and running is %d", numberOfActiveHosts));
-        Log.printLine();
+        Log.formatLine(2, String.format("The number of Containers Up and running is %d", numberOfContainers));
+//        Log.printLine();
+        Log.formatLine(String.format("The number of Vms Up and running is %d", numberOfActiveVms));
+//        Log.printLine();
+        Log.formatLine(String.format("The number of Hosts Up and running is %d", numberOfActiveHosts));
+//        Log.printLine();
 
         setLastProcessTime(currentTime);
         return minTime;

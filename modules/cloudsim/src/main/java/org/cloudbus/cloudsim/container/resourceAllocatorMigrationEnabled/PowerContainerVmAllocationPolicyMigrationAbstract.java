@@ -97,7 +97,7 @@ public abstract class PowerContainerVmAllocationPolicyMigrationAbstract extends 
         List<? extends ContainerVm> vmsToMigrate = getVmsToMigrateFromHosts(overUtilizedHosts);
         getExecutionTimeHistoryVmSelection().add(ExecutionTimeMeasurer.end("optimizeAllocationVmSelection"));
 
-        Log.printLine("Reallocation of VMs from the over-utilized hosts:");
+        Log.formatLine("Reallocation of VMs from the over-utilized hosts:");
         ExecutionTimeMeasurer.start("optimizeAllocationVmReallocation");
         List<Map<String, Object>> migrationMap = getNewVmPlacement(vmsToMigrate, new HashSet<ContainerHost>(
                 overUtilizedHosts));
@@ -148,7 +148,7 @@ public abstract class PowerContainerVmAllocationPolicyMigrationAbstract extends 
                 break;
             }
 
-            Log.printConcatLine("Under-utilized host: host #", underUtilizedHost.getId(), "\n");
+            Log.formatLine("Under-utilized host: host #", underUtilizedHost.getId(), "\n");
 
             excludedHostsForFindingUnderUtilizedHost.add(underUtilizedHost);
             excludedHostsForFindingNewVmPlacement.add(underUtilizedHost);
@@ -158,10 +158,10 @@ public abstract class PowerContainerVmAllocationPolicyMigrationAbstract extends 
                 continue;
             }
 
-            Log.print("Reallocation of VMs from the under-utilized host: ");
+            Log.formatLine("Reallocation of VMs from the under-utilized host: ");
             if (!Log.isDisabled()) {
                 for (ContainerVm vm : vmsToMigrateFromUnderUtilizedHost) {
-                    Log.print(vm.getId() + " ");
+                    Log.formatLine(vm.getId() + " ");
                 }
             }
             Log.printLine();
@@ -189,9 +189,9 @@ public abstract class PowerContainerVmAllocationPolicyMigrationAbstract extends 
     protected void printOverUtilizedHosts(List<PowerContainerHostUtilizationHistory> overUtilizedHosts) {
         if (!Log.isDisabled()) {
             if(overUtilizedHosts.size() != 0)
-                Log.printLine("Over-utilized hosts:");
+                Log.formatLine("Over-utilized hosts:");
             for (PowerContainerHostUtilizationHistory host : overUtilizedHosts) {
-                Log.printConcatLine("Host #", host.getId());
+                Log.formatLine("Host #", host.getId());
             }
             Log.printLine();
         }

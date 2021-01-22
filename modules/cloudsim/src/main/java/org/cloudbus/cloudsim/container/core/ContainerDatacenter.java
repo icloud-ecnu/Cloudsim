@@ -1,6 +1,7 @@
 package org.cloudbus.cloudsim.container.core;
 
 
+import org.cloudbus.cloudsim.container.lists.ContainerList;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerAllocationPolicy;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerVmAllocationPolicy;
 import org.cloudbus.cloudsim.*;
@@ -9,6 +10,7 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.container.core.containerCloudSimTags;
+import org.cloudbus.cloudsim.lists.CloudletList;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -850,7 +852,12 @@ public class ContainerDatacenter extends SimEntity {
             int vmId = cl.getVmId();
             if(vmId < 0){
                 Log.formatLine("Assign the cloudlet to the located container now.");
-                cl.setVmId(getContainerList().get(containerId).getVm().getId());
+                getContainerList();
+                if(ContainerList.getById(getContainerList(),containerId) == null){
+                    Log.formatLine("Container %d, has not been created and allocated.");
+                    return;
+                }
+                cl.setVmId(ContainerList.getById(getContainerList(),containerId).getVm().getId());
                 vmId = cl.getVmId();
             }
             int userId = cl.getUserId();
@@ -865,7 +872,9 @@ public class ContainerDatacenter extends SimEntity {
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
             Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
-                    // if this cloudlet is in the exec queue
+
+
+            // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
                 estimatedFinishTime += fileTransferTime;
                 send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);

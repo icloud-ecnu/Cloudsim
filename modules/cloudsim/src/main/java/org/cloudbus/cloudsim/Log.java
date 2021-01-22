@@ -33,7 +33,14 @@ public class Log {
 	private static boolean disabled;
 	
 	/** Buffer to avoid creating new string builder upon every print. */
-	private static StringBuilder buffer = new StringBuilder();		    
+	private static StringBuilder buffer = new StringBuilder();
+
+
+	/**
+	 * chris tuning: The log level for the simulation. 1. previous logout 2.Container_about_detailed log 3. important log for containers.
+	 */
+	private static int log_level = 1;
+
 
 	/**
 	 * Prints a message.
@@ -147,6 +154,12 @@ public class Log {
 	 */
 	public static void formatLine(String format, Object... args) {
 		if (!isDisabled()) {
+		//	printLine(String.format(format, args));
+		}
+	}
+
+	public static void formatLine(int LogLevel, String format, Object... args) {
+		if (!isDisabled() && LogLevel > log_level) {
 			printLine(String.format(format, args));
 		}
 	}

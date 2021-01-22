@@ -65,6 +65,8 @@ public class CloudSim {
 
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = 0.01;
+
+
 	
 	/**
 	 * Initialises all the common attributes.

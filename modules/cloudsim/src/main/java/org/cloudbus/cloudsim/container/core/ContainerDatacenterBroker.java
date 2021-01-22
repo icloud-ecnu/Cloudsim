@@ -255,7 +255,8 @@ public class ContainerDatacenterBroker extends SimEntity {
                 Log.printConcatLine("Error : Where is the VM");}
             else{
             getContainersToVmsMap().put(containerId, vmId);
-            getContainersCreatedList().add(ContainerList.getById(getContainerList(), containerId));
+            if(ContainerList.getById(getContainerList(), containerId) != null)
+                getContainersCreatedList().add(ContainerList.getById(getContainerList(), containerId));
 
 //            ContainerVm p= ContainerVmList.getById(getVmsCreatedList(), vmId);
             int hostId = ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId();
@@ -267,7 +268,6 @@ public class ContainerDatacenterBroker extends SimEntity {
             //Container container = ContainerList.getById(getContainerList(), containerId);
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Failed Creation of Container #", containerId);
         }
-
         incrementContainersAcks();
         if (getContainersAcks() == getContainerList().size()) {
             //Log.print(getContainersCreatedList().size() + "vs asli"+getContainerList().size());
@@ -543,9 +543,6 @@ public class ContainerDatacenterBroker extends SimEntity {
     }
 
 
-    /**
-     *
-     */
     protected void submitContainers(){
         List<Container> successfullySubmitted = new ArrayList<>();
         int i = 0;
@@ -579,7 +576,7 @@ public class ContainerDatacenterBroker extends SimEntity {
             successfullySubmitted.add(container);
 
         }
-        
+
         sendNow(getDatacenterIdsList().get(0), containerCloudSimTags.CONTAINER_SUBMIT, successfullySubmitted);
 
 //        List<Container> successfullySubmitted = new ArrayList<>();
