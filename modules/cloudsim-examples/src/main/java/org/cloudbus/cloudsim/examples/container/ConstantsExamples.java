@@ -21,8 +21,8 @@ public class ConstantsExamples {
     /**
      * Cloudlet specs
      */
-    public static final int CLOUDLET_LENGTH = 400;
-    public static final int CLOUDLET_PES = 1;
+    public static final int CLOUDLET_LENGTH = 40000;
+    public static final int CLOUDLET_PES = 10;
 
     /**
      * Startup delay for VMs and the containers are mentioned here.
@@ -48,19 +48,19 @@ public class ConstantsExamples {
     public static final int CONTAINER_TYPES = 1;
     //chris add:
     public static final int NUMBER_CONTAINERS = 4;
-    public static final int[] CONTAINER_MIPS = new int[]{1};
-    public static final int[] CONTAINER_PES = new int[]{4};
-    public static final int[] CONTAINER_RAM = new int[]{10};
-    public static final int CONTAINER_BW = 1;
+    public static final int[] CONTAINER_MIPS = new int[]{10};
+    public static final int[] CONTAINER_PES = new int[]{20};
+    public static final int[] CONTAINER_RAM = new int[]{102};
+    public static final int CONTAINER_BW = 100;
 
     /**
      * The available types of hosts along with the specs.
      */
 
     public static final int HOST_TYPES = 1;
-    public static final int[] HOST_MIPS = new int[]{2001};
-    public static final int[] HOST_PES = new int[]{1001};
-    public static final int[] HOST_RAM = new int[]{20241};
+    public static final int[] HOST_MIPS = new int[]{1001};
+    public static final int[] HOST_PES = new int[]{2001};
+    public static final int[] HOST_RAM = new int[]{10241};
     public static final int HOST_BW = 1000001;
     public static final int HOST_STORAGE = 1000000;
     public static final PowerModel[] HOST_POWER = new PowerModel[]{new PowerModelSpecPowerHpProLiantMl110G4Xeon3040(),
@@ -74,8 +74,8 @@ public class ConstantsExamples {
      */
 
 
-    public static final int NUMBER_HOSTS = 1;
-    public static final int NUMBER_VMS = 2;
+    public static final int NUMBER_HOSTS = 3;
+    public static final int NUMBER_VMS = 3;
     public static final int NUMBER_CLOUDLETS = 4;
 
 //-----------------------The Addresses

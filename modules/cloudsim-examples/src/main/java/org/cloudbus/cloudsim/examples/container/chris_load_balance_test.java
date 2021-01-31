@@ -1,15 +1,5 @@
 package org.cloudbus.cloudsim.examples.container;
 
-
-/*
- * Title:        ContainerCloudSimExample1 Toolkit
- * Description:  ContainerCloudSimExample1 (containerized cloud simulation) Toolkit for Modeling and Simulation
- *               of Containerized Clouds
- * Licence:      GPL - http://www.gnu.org/copyleft/gpl.html
- *
- * Copyright (c) 2009, The University of Melbourne, Australia
- */
-
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
@@ -51,7 +41,7 @@ import java.util.List;
 /**
  * A simple example showing how to create a data center with one host, one VM, one container and run one cloudlet on it.
  */
-public class chris_container_test {
+public class chris_load_balance_test {
 
     /**
      * The cloudlet list.
@@ -160,18 +150,13 @@ public class chris_container_test {
             int overBookingFactor = 80;
             broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
-
-            /**
-             * Add a strategy to control the log ouput.
-             */
-            Log.set_log_level(2);
             /**
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
              */
             //cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(101, 10,
-                3,
-                1000, 100);
+                    3,
+                    1000, 100);
             cloudletList = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
@@ -185,13 +170,14 @@ public class chris_container_test {
              */
             String logAddress = "~/Results";
 
-            @SuppressWarnings("unused")
-            PowerContainerDatacenter e = (PowerContainerDatacenter) createDatacenter("datacenter",
-                    PowerContainerDatacenterCM.class, hostList, vmAllocationPolicy, containerAllocationPolicy,
-                    getExperimentName("CHRIS_TEST", String.valueOf(overBookingFactor)),
-                    ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
-                    ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
-
+            for(int i = 0; i < hostList.size(); i++) {
+                //unused
+                PowerContainerDatacenterCM tmp = (PowerContainerDatacenterCM) createDatacenter("DatacenterCM",
+                        PowerContainerDatacenterCM.class, hostList.subList(i, i + 1), vmAllocationPolicy, containerAllocationPolicy,
+                        getExperimentName("CHRIS_LOAD_BALANCE_TEST", String.valueOf(overBookingFactor)),
+                        ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
+                        ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
+            }
 
             /**
              * 11- Submitting the cloudlet's , container's , and VM's lists to the broker.
@@ -445,7 +431,7 @@ public class chris_container_test {
             java.io.File inputFolder = new java.io.File(aFiles1.toString());
             java.io.File[] files = inputFolder.listFiles();
             for (int i = 0; i < files.length; ++i) {
-               // Log.formatLine("----------------chris: cpu utilization file %s, cloudlet number: %d",files[i].toString(), createdCloudlets);
+                // Log.formatLine("----------------chris: cpu utilization file %s, cloudlet number: %d",files[i].toString(), createdCloudlets);
                 if (createdCloudlets < numberOfCloudlets) {
                     ContainerCloudlet cloudlet = null;
                     try {

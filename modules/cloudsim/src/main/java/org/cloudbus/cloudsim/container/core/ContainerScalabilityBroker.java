@@ -8,6 +8,7 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
@@ -18,7 +19,7 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
     /**
      * Created a new Broker object.
      *
-     * @param namename to be associated with this entity (as required by Sim_entity class from
+     * @param name to be associated with this entity (as required by Sim_entity class from
      *                          simjava package)
      * @param overBookingfactor
      * @throws Exception the exception
@@ -83,8 +84,8 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         cl.setContainerId(con.getId());
         l.add(con);
         submitContainerList(l);
-        Log.formatLine(2, "chris note: create a new container, Available PE number " + con.getAvailablePesNum());
-        Log.formatLine(2, "chris note: Binding Cloudlet " + cl.getCloudletId() + "  to container " + con.getId() + " during creating container.");
+        Log.formatLine(2, "chris note: Binding Cloudlet " + cl.getCloudletId() + "  to the new container " + con.getId()
+                + " BUT it has not been allocated.");
         //how to place container to VM. cannot invoke the non-static methods. unreasonable.
         sendNow(datacenterIdsList.get(0), containerCloudSimTags.CONTAINER_SUBMIT, l);
     }
@@ -98,14 +99,14 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
     public void ProcessBindingBeforeSubmit(SimEvent ev){
         ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
         boolean binding = false;
-        Log.formatLine(2, "chris note: created containers size: " + getContainersCreatedList().size());
+       // Log.formatLine(2, "chris note: created containers size: " + getContainersCreatedList().size());
         for(Container container : getContainersCreatedList()){
             if (container.getAvailablePesNum() >= cl.getNumberOfPes()) {
                 binding = true;
                 cl.setContainerId(container.getId());
                 Log.formatLine(2, "chris note: Container id: " + container.getId() + " has "
-                        +  container.getAvailablePesNum() + " <vs> requests"  + cl.getNumberOfPes());
-                Log.formatLine(2, "chris note: Binding Cloudlet" + cl.getCloudletId() + "  to container " + container.getId());
+                        +  container.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
+                                + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + container.getId());
                 cl.setVmId(container.getVm().getId());
                 //subtract the available PEs number.
                 container.setAvailablePesNum(container.getAvailablePesNum() - cl.getNumberOfPes());
@@ -113,10 +114,10 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
             }
         }
         if(!binding){
-            Log.formatLine(2, "Chris note: None of containers satisfy the request, create a new container.");
+            //Log.formatLine(2, "Chris note: None of containers satisfy the request, create a new container.");
             processContainerCreate(cl);
         }
-        send(getDatacenterIdsList().get(0), 1,  CloudSimTags.CLOUDLET_SUBMIT, cl);
+        send(getDatacenterIdsList().get(0), CloudSim.getMinTimeBetweenEvents(),  CloudSimTags.CLOUDLET_SUBMIT, cl);
     }
 
     @Override
@@ -138,23 +139,32 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         ContainerCloudlet cloudlet = (ContainerCloudlet) ev.getData();
 
         //chris add for update available PEs for containers.
-        if(cloudlet.getContainerId() < getContainerList().size()){
-            Container con = ContainerList.getById(getContainersCreatedList(),cloudlet.getContainerId());
+        Container con = ContainerList.getById(getContainersCreatedList(),cloudlet.getContainerId());
+        if(con != null){
             con.setAvailablePesNum(con.getAvailablePesNum() + cloudlet.getNumberOfPes());
+           // Log.formatLine(2, "Chris note: Scale down Judge. Current size: " + con.getAvailablePesNum() + " vs " + con.getNumberOfPes() );
             if(con.getAvailablePesNum() == con.getNumberOfPes()){
                 //Here we can adopt the corresponding strategy to clear the empty container.
                 //But the source codes sometimes leverage the characteristics of the list <ContainersCreatedList>,
-                //and thus it will lead to some annoying bug. 
-
+                //and thus it will lead to some annoying bug.
+                int rmId = con.getId();
+                List<Container> new_list = getContainersCreatedList();
+                Iterator<Container> iterator = new_list.iterator();
+                while (iterator.hasNext()) {
+                    Container c = iterator.next();
+                    if (con.equals(c)) {
+                        iterator.remove();//使用迭代器的删除方法删除
+                    }
+                }
+                setContainersCreatedList(new_list);
+                Log.formatLine(2, "Chris note: Scale down. Current size: " + getContainersCreatedList().size()
+                + " Remove container ID: " + rmId);
             }
         }
 
-
-
         getCloudletReceivedList().add(cloudlet);
         Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Cloudlet ", cloudlet.getCloudletId(),
-                " returned");
-        Log.printConcatLine(CloudSim.clock(), ": ", getName(), "The number of finished Cloudlets is:", getCloudletReceivedList().size());
+                " returned", " And the number of finished Cloudlets is:", getCloudletReceivedList().size());
         cloudletsSubmitted--;
 
 
