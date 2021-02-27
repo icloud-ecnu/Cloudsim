@@ -1051,7 +1051,7 @@ public class Datacenter extends SimEntity {
 
 	@Override
 	public void startEntity() {
-		Log.printConcatLine(getName(), " is starting...");
+		Log.formatLine(3, getName() + " ( id: " + getId() + ")" +  " is starting...");
 		// this resource should register to regional CIS.
 		// However, if not specified, then register to system CIS (the
 		// default CloudInformationService) entity.

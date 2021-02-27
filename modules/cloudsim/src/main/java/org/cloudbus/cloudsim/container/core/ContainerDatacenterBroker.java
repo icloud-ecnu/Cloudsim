@@ -547,9 +547,9 @@ public class ContainerDatacenterBroker extends SimEntity {
         List<Container> successfullySubmitted = new ArrayList<>();
         int i = 0;
         for(Container container:getContainerList()) {
-            ContainerCloudlet cloudlet = getCloudletList().get(i);
+            if(getCloudletList().size() > 0){
+                ContainerCloudlet cloudlet = getCloudletList().get(i);
                 //Log.printLine("Containers Created" + getContainersCreated());
-
                 if (cloudlet.getUtilizationModelCpu() instanceof UtilizationModelPlanetLabInMemory) {
                     UtilizationModelPlanetLabInMemory temp = (UtilizationModelPlanetLabInMemory) cloudlet.getUtilizationModelCpu();
                     double[] cloudletUsage = temp.getData();
@@ -568,8 +568,8 @@ public class ContainerDatacenterBroker extends SimEntity {
                     }
 
                 }
-            i++;
-
+                i++;
+            }
         }
 
         for(Container container:getContainerList()){

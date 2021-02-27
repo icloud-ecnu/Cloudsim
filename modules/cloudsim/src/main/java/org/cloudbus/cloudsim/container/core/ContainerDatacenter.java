@@ -1172,7 +1172,7 @@ public class ContainerDatacenter extends SimEntity {
      */
     @Override
     public void startEntity() {
-        Log.printConcatLine(getName(), " is starting...");
+        Log.formatLine(3, getName() + " ( id: " + getId() + ")" +  " is starting...");
         // this resource should register to regional GIS.
         // However, if not specified, then register to system GIS (the
         // default CloudInformationService) entity.
