@@ -79,7 +79,7 @@ public class chris_container_test {
     /**
      * The container datacenter broker.
      */
-    private static ContainerScalabilityBroker broker;
+    private static UserSideBroker broker;
 
     /**
      * Creates main() to run this example.
@@ -171,7 +171,7 @@ public class chris_container_test {
              */
             //cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
 
-            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(101, 10,
+            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(12000, 1200,
                 3,
                 1000, 100);
             cloudletList = self_design_distribution.GetWorkloads();
@@ -179,7 +179,7 @@ public class chris_container_test {
                 cl.setUserId(brokerId);
             }
             //Visualization
-            Draw pre = new Draw(cloudletList, 101, 10, 1000, 100);
+            Draw pre = new Draw(cloudletList, 12000, 1200, 1000, 100);
             pre.setVisible(true);
             containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CONTAINERS);
             vmList = createVmList(brokerId, ConstantsExamples.NUMBER_VMS);
@@ -258,9 +258,9 @@ public class chris_container_test {
      * @param overBookingFactor
      * @return the datacenter broker
      */
-    private static ContainerScalabilityBroker createBroker(int overBookingFactor) {
+    private static UserSideBroker createBroker(int overBookingFactor) {
 
-        ContainerScalabilityBroker broker = null;
+        UserSideBroker broker = null;
 
         try {
             Container c = new PowerContainer(IDs.pollId(Container.class),
@@ -268,7 +268,7 @@ public class chris_container_test {
                     (double) ConstantsExamples.CONTAINER_MIPS[0],
                     ConstantsExamples.CONTAINER_PES[0], ConstantsExamples.CONTAINER_RAM[0], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
                     new ContainerCloudletSchedulerDynamicWorkload(ConstantsExamples.CONTAINER_MIPS[0], ConstantsExamples.CONTAINER_PES[0]), ConstantsExamples.SCHEDULING_INTERVAL);
-            broker = new ContainerScalabilityBroker("Broker", overBookingFactor, c);
+            broker = new UserSideBroker("Broker", overBookingFactor, c);
         } catch (Exception var2) {
             var2.printStackTrace();
             System.exit(0);

@@ -23,14 +23,16 @@ import org.cloudbus.cloudsim.container.utils.IDs;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicy;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicyMaximumUsage;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
+import org.cloudbus.cloudsim.examples.JavaSwingTool.Draw;
 
 import java.text.DecimalFormat;
 import java.util.*;
 
-public class AcrossDatacenterTest {
+public class IntervalScaleUpTest {
 
 
-    private static List<Cloudlet> cloudletList;
+    private static List<ContainerCloudlet> cloudletList;
 
     private static List<ContainerVm> vmlist;
 
@@ -40,7 +42,7 @@ public class AcrossDatacenterTest {
 
     private static UserSideBroker broker;
 
-    //host description
+    //host and vm description. We just concentrate on the containers.
     private static int ram = 2048; //host memory (MB)
     private static long storage = 1000000; //host storage
     private static int bw = 10000;
@@ -54,32 +56,33 @@ public class AcrossDatacenterTest {
         Log.printLine("Starting Across Datacenter Container Create Test...");
 
         try {
-
+            // First step: Initialize some variables.
             double overUtilizationThreshold = 0.80;
             double underUtilizationThreshold = 0.70;
             int overBookingFactor = 80;
-            // First step: Initialize the CloudSim package. It should be called
-            // before creating any entities.
+            int DatacenterNumber = 4;
+            int HostNumber = DatacenterNumber * 10;
+            int VmNumber = HostNumber;
+            int ContainerNumber = 4;
+
+
             int num_user = 1;   // number of cloud users
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
 
-            Log.set_log_level(2);
+            Log.set_log_level(4);
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
             hostList = new ArrayList<ContainerHost>();
-            hostList = createHostList(4);
+            hostList = createHostList(HostNumber);
 
             broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
 
             vmlist = new ArrayList<ContainerVm>();
-            vmlist = createVmList(brokerId, 4);
-
-            containerlist = createContainerList(brokerId, 16);
-
-
+            vmlist = createVmList(brokerId, VmNumber);
+            containerlist = createContainerList(brokerId, ContainerNumber);
             ContainerAllocationPolicy containerAllocationPolicy = new PowerContainerAllocationPolicySimple();
             PowerContainerVmSelectionPolicy vmSelectionPolicy = new PowerContainerVmSelectionPolicyMaximumUsage();
             HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyFirstFit();
@@ -90,29 +93,43 @@ public class AcrossDatacenterTest {
 
             // Second step: Create Datacenters
             //Datacenters are the resource providers in CloudSim. We need at list one of them to run a CloudSim simulation
-            @SuppressWarnings("unused")
-            PowerContainerDatacenter e1 = (PowerContainerDatacenter) createDatacenter("datacenter0",
-                    PowerContainerDatacenterCM.class, hostList.subList(0,hostList.size() / 2), vmAllocationPolicy, containerAllocationPolicy,
-                    getExperimentName("ACROSS_DATACENTER_TEST", String.valueOf(overBookingFactor)),
-                    ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
-                    ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
-            @SuppressWarnings("unused")
-            PowerContainerDatacenter e2 = (PowerContainerDatacenter) createDatacenter("datacenter1",
-                    PowerContainerDatacenterCM.class, hostList.subList(hostList.size() / 2, hostList.size()), vmAllocationPolicy, containerAllocationPolicy,
-                    getExperimentName("ACROSS_DATACENTER_TEST", String.valueOf(overBookingFactor)),
-                    ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
-                    ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
+            for(int i = 0; i < DatacenterNumber; i++) {
+                @SuppressWarnings("unused")
+                UserSideDatacenter e1 = (UserSideDatacenter) createDatacenter("datacenter" + i,
+                        PowerContainerDatacenterCM.class, hostList.subList(hostList.size() / DatacenterNumber * i, hostList.size() / DatacenterNumber * (i + 1)),
+                        vmAllocationPolicy, containerAllocationPolicy,
+                        getExperimentName("IntervalScaleUpTest", String.valueOf(overBookingFactor)),
+                        ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
+                        ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY);
+            }
 
             broker.submitVmList(vmlist);
-
             broker.submitContainerList(containerlist);
 
+
+            /**
+             * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
+             */
+
+            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(12000, 1200,
+                    10000,
+                    100, 100);
+            cloudletList = self_design_distribution.GetWorkloads();
+            for(ContainerCloudlet cl : cloudletList){
+                cl.setUserId(brokerId);
+            }
+            broker.submitCloudletList(cloudletList);
+//            Draw pre = new Draw(cloudletList, 12000, 1200, 100, 100);
+//            pre.setVisible(true);
 
             CloudSim.startSimulation();
             printContainerList(broker.getContainersCreatedList());
 
+            List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
+            printCloudletList(newList);
+
             CloudSim.stopSimulation();
-            Log.printLine("Across Datacenter Container Create finished!");
+            Log.printLine("Interval Scale Up Test finished!");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -153,7 +170,7 @@ public class AcrossDatacenterTest {
         ContainerDatacenterCharacteristics characteristics = new
                 ContainerDatacenterCharacteristics(arch, os, vmm, hostList, time_zone, cost, costPerMem, costPerStorage,
                 costPerBw);
-        ContainerDatacenter datacenter = new PowerContainerDatacenterCM(name, characteristics, vmAllocationPolicy,
+        ContainerDatacenter datacenter = new UserSideDatacenter(name, characteristics, vmAllocationPolicy,
                 containerAllocationPolicy, new LinkedList<Storage>(), schedulingInterval, experimentName, logAddress,
                 VMStartupDelay, ContainerStartupDelay);
 
@@ -259,8 +276,38 @@ public class AcrossDatacenterTest {
             Log.printLine( indent + con.getId() + indent + indent  + indent
                     + con.getVm().getId() + indent + indent + con.getVm().getHost().getId()
                     + indent + indent + indent  + con.getVm().getHost().getDatacenter().getId());
-            }
+        }
 
+    }
+
+    private static void printCloudletList(List<ContainerCloudlet> list) {
+        int size = list.size();
+        Log.printLine();
+        Log.printLine("========== OUTPUT ==========");
+        Log.printLine("The cloulet size is:" + size);
+        Cloudlet cloudlet;
+
+        String indent = "    ";
+
+        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
+                + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
+                + "Start Time" + indent + "Finish Time");
+
+        DecimalFormat dft = new DecimalFormat("###.##");
+        for (int i = 0; i < size; i++) {
+            cloudlet = list.get(i);
+            Log.print(indent + cloudlet.getCloudletId() + indent + indent);
+            if (cloudlet.getCloudletStatusString() == "Success") {
+                Log.print("SUCCESS");
+                Log.printLine(indent + indent + cloudlet.getResourceId()
+                        + indent + indent + indent + cloudlet.getVmId()
+                        + indent + indent
+                        + dft.format(cloudlet.getActualCPUTime()) + indent
+                        + indent + dft.format(cloudlet.getExecStartTime())
+                        + indent + indent
+                        + dft.format(cloudlet.getFinishTime()));
+            }
+        }
     }
 
 }

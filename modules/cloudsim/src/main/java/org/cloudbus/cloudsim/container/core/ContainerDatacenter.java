@@ -313,7 +313,7 @@ public class ContainerDatacenter extends SimEntity {
                 } else {
                     data[0] = -1;
                     //notAssigned.add(container);
-                    Log.printLine(String.format("Couldn't find a vm to host the container #%s", container.getUid()));
+                    Log.formatLine(String.format("Couldn't find a vm to host the container #%s", container.getUid()));
                 }
                 send(ev.getSource(), CloudSim.getMinTimeBetweenEvents(), containerCloudSimTags.CONTAINER_CREATE_ACK, data);
 
@@ -515,7 +515,7 @@ public class ContainerDatacenter extends SimEntity {
 
         if (result) {
             getContainerVmList().add(containerVm);
-
+            Log.printLine(String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId()));
             if (containerVm.isBeingInstantiated()) {
                 containerVm.setBeingInstantiated(false);
             }

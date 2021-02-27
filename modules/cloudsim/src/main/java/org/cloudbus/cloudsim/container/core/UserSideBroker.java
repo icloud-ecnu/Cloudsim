@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
+public class UserSideBroker extends ContainerDatacenterBroker{
 
     private Container const_container;
 
@@ -26,7 +26,7 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
      * @pre name != null
      * @post $none
      */
-    public ContainerScalabilityBroker(String name, double overBookingfactor, Container e) throws Exception {
+    public UserSideBroker(String name, double overBookingfactor, Container e) throws Exception {
         super(name, overBookingfactor);
         this.const_container = e;
     }
@@ -163,8 +163,8 @@ public class ContainerScalabilityBroker extends ContainerDatacenterBroker{
         }
 
         getCloudletReceivedList().add(cloudlet);
-        Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Cloudlet ", cloudlet.getCloudletId(),
-                " returned", " And the number of finished Cloudlets is:", getCloudletReceivedList().size());
+        Log.formatLine(2, CloudSim.clock() + ": " + getName() + ": Cloudlet " + cloudlet.getCloudletId()+
+                " returned" + " And the number of finished Cloudlets is:" + getCloudletReceivedList().size());
         cloudletsSubmitted--;
 
 

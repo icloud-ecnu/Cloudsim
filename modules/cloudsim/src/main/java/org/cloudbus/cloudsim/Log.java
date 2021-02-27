@@ -95,13 +95,13 @@ public class Log {
 	 * @param messages the messages to print
 	 */
 	public static void printConcat(Object... messages) {
-		if (!isDisabled()) {
-			buffer.setLength(0); // Clear the buffer		    
-			for(int i = 0 ; i < messages.length ; i ++) {
-				buffer.append(String.valueOf(messages[i]));
-			}
-			print(buffer);
-		}
+//		if (!isDisabled()) {
+//			buffer.setLength(0); // Clear the buffer
+//			for(int i = 0 ; i < messages.length ; i ++) {
+//				buffer.append(String.valueOf(messages[i]));
+//			}
+//			print(buffer);
+//		}
 	}
 	
 	/**
@@ -110,13 +110,13 @@ public class Log {
 	 * @param messages the messages to print
 	 */
 	public static void printConcatLine(Object... messages) {
-		if (!isDisabled()) {
-			buffer.setLength(0); // Clear the buffer		    
-			for(int i = 0 ; i < messages.length ; i ++) {
-				buffer.append(String.valueOf(messages[i]));
-			}
-			printLine(buffer);
-		}
+//		if (!isDisabled()) {
+//			buffer.setLength(0); // Clear the buffer
+//			for(int i = 0 ; i < messages.length ; i ++) {
+//				buffer.append(String.valueOf(messages[i]));
+//			}
+//			printLine(buffer);
+//		}
 	}
 
 	
