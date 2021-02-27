@@ -10,6 +10,7 @@ import org.cloudbus.cloudsim.examples.container.UtilizationModelPlanetLabInMemor
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 public class BaseRequestDistribution {
@@ -54,6 +55,7 @@ public class BaseRequestDistribution {
 //            }
 //        }
 //        Log.formatLine("File Path: " + file_path.size());
+        Random rand = new Random();
         for(int cur_time = 0; cur_time < terminated_time; cur_time += interval_length) {
             int RequestNum = RequestNum_distribution.GetNextPoisson();
             NormalDistribution CloudletLength_distribution = new NormalDistribution(Gaussian_mean, Gaussian_var);
@@ -64,7 +66,7 @@ public class BaseRequestDistribution {
                         //new UtilizationModelPlanetLabInMemoryExtended(file_path.get(CloudletID), ConstantsExamples.SCHEDULING_INTERVAL),
                         UtilizationModelStochastic,
                         UtilizationModelStochastic, UtilizationModelStochastic);
-                tmp.setExecStartTime(cur_time);
+                tmp.setExecStartTime(cur_time + rand.nextInt(interval_length));
                 required_workloads.add(tmp);
             }
         }

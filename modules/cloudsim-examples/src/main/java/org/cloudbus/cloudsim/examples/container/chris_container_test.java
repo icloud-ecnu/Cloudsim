@@ -37,6 +37,7 @@ import org.cloudbus.cloudsim.container.utils.IDs;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicy;
 import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelectionPolicyMaximumUsage;
 import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
+import org.cloudbus.cloudsim.examples.JavaSwingTool.Draw;
 //import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.NormalDistribution;
 
 //import org.cloudbus.cloudsim.core.CloudSim;
@@ -169,6 +170,7 @@ public class chris_container_test {
              * 9- Creating the cloudlet, container and VM lists for submitting to the broker.
              */
             //cloudletList = createContainerCloudletList(brokerId, ConstantsExamples.NUMBER_CLOUDLETS);
+
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(101, 10,
                 3,
                 1000, 100);
@@ -176,6 +178,9 @@ public class chris_container_test {
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
             }
+            //Visualization
+            Draw pre = new Draw(cloudletList, 101, 10, 1000, 100);
+            pre.setVisible(true);
             containerList = createContainerList(brokerId, ConstantsExamples.NUMBER_CONTAINERS);
             vmList = createVmList(brokerId, ConstantsExamples.NUMBER_VMS);
             Log.formatLine("------CHRIS VERIFY: CloudLet number: " + cloudletList.size() + " container number: "

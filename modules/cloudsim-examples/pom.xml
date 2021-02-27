@@ -15,7 +15,18 @@
   		<groupId>${project.groupId}</groupId>
   		<artifactId>cloudsim</artifactId>
   		<version>${project.version}</version>
-  	</dependency>  
+  	</dependency>
+    <dependency>
+        <groupId>org.jfree</groupId>
+        <artifactId>jfreechart</artifactId>
+        <version>1.5.0</version>
+    </dependency>
+      <dependency>
+          <groupId>org.codehaus.jtstand</groupId>
+          <artifactId>jtstand-common</artifactId>
+          <version>1.5.9</version>
+      </dependency>
   </dependencies>
+
     
 </project>
