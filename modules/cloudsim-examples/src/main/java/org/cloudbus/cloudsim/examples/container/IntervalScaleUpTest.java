@@ -61,14 +61,14 @@ public class IntervalScaleUpTest {
             double underUtilizationThreshold = 0.70;
             int overBookingFactor = 80;
             int DatacenterNumber = 4;
-            int HostNumber = DatacenterNumber * 128;
+            int HostNumber = DatacenterNumber * 10;
             int VmNumber = HostNumber;
             int ContainerNumber = 4;
             int num_user = 1;   // number of cloud users
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
 
-            Log.set_log_level(4);
+            Log.set_log_level(1);
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);

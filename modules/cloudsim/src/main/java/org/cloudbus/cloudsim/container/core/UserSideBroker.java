@@ -49,15 +49,14 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     }
 
 
-    public int SelectDatacenter(ContainerCloudlet cl) {
-
+    public int SelectDatacenter(Container con) {
         Map<Integer, ContainerDatacenterCharacteristics> DatacenterCharacteristicsList = getDatacenterCharacteristicsList();
         int OptimalDatacenter = getDatacenterIdsList().get(0);
         double max_value = Double.MAX_VALUE;
         for (Map.Entry<Integer, ContainerDatacenterCharacteristics> entry : DatacenterCharacteristicsList.entrySet()){
             int datacenterId = entry.getKey();
             ContainerDatacenterCharacteristics characteristic = entry.getValue();
-            if(characteristic.getHostWithFreePe(cl.getNumberOfPes()) == null) {
+            if(characteristic.getHostWithFreePe(con.getNumberOfPes()) == null) {
                 continue;
             }
             double CpuUtilization = characteristic.getNumberOfFreePes() / characteristic.getNumberOfPes();
@@ -91,28 +90,56 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 
 
 
-
-    public void ProcessBindingBeforeSubmit(SimEvent ev){
-        ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
+    public boolean ProcessBindingBeforeSubmit(ContainerCloudlet cl){
+//        Log.formatLine(4, "Cloudlet id: " + cl.getCloudletId() + " Destination Datacenter Id: " + DestDatacenterId);
+        int destDatacenterId = getDatacenterIdsList().get(0);
         boolean binding = false;
-        int DestDatacenterId = SelectDatacenter(cl);
-        Log.formatLine(4, "Cloudlet id: " + cl.getCloudletId() + " Destination Datacenter Id: " + DestDatacenterId);
+        for(Container container : getContainersCreatedList()){
+            if (container.getAvailablePesNum() >= cl.getNumberOfPes()) {
+                binding = true;
+                cl.setContainerId(container.getId());
+                Log.formatLine(4, "chris note: Container id: " + container.getId() + " has "
+                        +  container.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
+                        + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + container.getId());
+                cl.setVmId(container.getVm().getId());
+                destDatacenterId = container.getVm().getHost().getDatacenter().getId();
+                //subtract the available PEs number.
+                container.setAvailablePesNum(container.getAvailablePesNum() - cl.getNumberOfPes());
+                break;
+            }
+        }
+        if(binding){
+            send(destDatacenterId, CloudSim.getMinTimeBetweenEvents(),  CloudSimTags.CLOUDLET_SUBMIT, cl);
+            return true;
+        }
+        else{
+            return false;
+        }
 
-
-            // Log.formatLine(2, "chris note: created containers size: " + getContainersCreatedList().size());
-//        for(Container container : getContainersCreatedList()){
-//            Log.formatLine(4, "Cloudlet id: " + cl.getCloudletId()
-//                    + " Container id: " + container.getId() + "  Vm id: " + container.getVm().getId()
-//                    + " host id: " + container.getVm().getHost().getId()
-//                    + " datacenter id: " + container.getVm().getHost().getDatacenter().getId());
-//            ContainerDatacenter d0 = container.getVm().getHost().getDatacenter();
-           //Container Selection can be divided into two steps. First Step: select an appropriate datacenter and then select a container.
-
-            //First step: datacenter
-
-//        }
     }
 
+
+    public void ProcessContainerScalability(SimEvent ev){
+        for(int i = 0 ; i < getContainersCreatedList().size(); i++){
+            processContainerCreate();
+        }
+    }
+
+    public int processContainerCreate(){
+        List<Container> l = new ArrayList<Container>(1);
+        Container con = new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips(),
+                const_container.getNumberOfPes() , //a little change to initialize
+                (int)const_container.getRam(),
+                const_container.getBw(), const_container.getSize(),
+                const_container.getContainerManager(), const_container.getContainerCloudletScheduler(),
+                const_container.getSchedulingInterval());
+        l.add(con);
+        submitContainerList(l);
+        //how to place container to VM.
+        int destDatacenterId = SelectDatacenter(con);
+        sendNow(destDatacenterId, containerCloudSimTags.CONTAINER_SUBMIT, l);
+        return destDatacenterId;
+    }
 
     @Override
     public void processEvent(SimEvent ev) {
@@ -144,9 +171,6 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             case containerCloudSimTags.CONTAINER_CREATE_ACK:
                 processContainerCreate(ev);
                 break;
-            case containerCloudSimTags.BINDING_CLOUDLET:
-                ProcessBindingBeforeSubmit(ev);
-                break;
             case containerCloudSimTags.CONTAINER_SCALABILITY:
                 ProcessContainerScalability(ev);
                 break;
@@ -158,61 +182,22 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     }
 
 
-    public void ProcessContainerScalability(SimEvent ev){
-
-    }
-
-//    public void processContainerCreate(ContainerCloudlet cl){
-//        List<Container> l = new ArrayList<Container>(1);
-//        Container con = new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips(),
-//                                                const_container.getNumberOfPes() - cl.getNumberOfPes(), //a little change to initialize
-//                                                 (int)const_container.getRam(),
-//                                                const_container.getBw(), const_container.getSize(),
-//                                                const_container.getContainerManager(), const_container.getContainerCloudletScheduler(),
-//                                                const_container.getSchedulingInterval());
-//        cl.setContainerId(con.getId());
-//        l.add(con);
-//        submitContainerList(l);
-//        Log.formatLine(2, "chris note: Binding Cloudlet " + cl.getCloudletId() + "  to the new container " + con.getId()
-//                + " BUT it has not been allocated.");
-//        //how to place container to VM. cannot invoke the non-static methods. unreasonable.
-//        sendNow(datacenterIdsList.get(0), containerCloudSimTags.CONTAINER_SUBMIT, l);
-//    }
-
-//    public void ProcessBindingBeforeSubmit(SimEvent ev){
-//        ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
-//        boolean binding = false;
-//       // Log.formatLine(2, "chris note: created containers size: " + getContainersCreatedList().size());
-//        for(Container container : getContainersCreatedList()){
-//            if (container.getAvailablePesNum() >= cl.getNumberOfPes()) {
-//                binding = true;
-//                cl.setContainerId(container.getId());
-//                Log.formatLine(2, "chris note: Container id: " + container.getId() + " has "
-//                        +  container.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
-//                                + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + container.getId());
-//                cl.setVmId(container.getVm().getId());
-//                //subtract the available PEs number.
-//                container.setAvailablePesNum(container.getAvailablePesNum() - cl.getNumberOfPes());
-//                break;
-//            }
-//        }
-//        if(!binding){
-//            //Log.formatLine(2, "Chris note: None of containers satisfy the request, create a new container.");
-//            processContainerCreate(cl);
-//        }
-//        send(getDatacenterIdsList().get(0), CloudSim.getMinTimeBetweenEvents(),  CloudSimTags.CLOUDLET_SUBMIT, cl);
-//    }
-
-
     @Override
     protected void submitCloudlets(){
         List<ContainerCloudlet> successfullySubmitted = new ArrayList<>();
-
         for (ContainerCloudlet clt : getCloudletList()) {
-            send(getDatacenterIdsList().get(0), clt.getExecStartTime(), CloudSimTags.CLOUDLET_SUBMIT, clt);
-            cloudletsSubmitted++;
-            getCloudletSubmittedList().add(clt);
-            successfullySubmitted.add(clt);
+            boolean flag = false;
+            if(clt.getContainerId() == -1){
+                flag = ProcessBindingBeforeSubmit(clt);
+            }
+            else{
+                flag = true;
+            }
+            if(flag){
+                cloudletsSubmitted++;
+                getCloudletSubmittedList().add(clt);
+                successfullySubmitted.add(clt);
+            }
         }
         getCloudletList().removeAll(successfullySubmitted);
         successfullySubmitted.clear();

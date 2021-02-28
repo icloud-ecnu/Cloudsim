@@ -39,7 +39,7 @@ public class containerCloudSimTags {
     public static final int VM_NEW_CREATE = ContainerSimBASE + 11;
 
     //chris tuning:
-    public static final int BINDING_CLOUDLET = ContainerSimBASE + 20;
+//    public static final int BINDING_CLOUDLET = ContainerSimBASE + 20;
     public static final int CONTAINER_SCALABILITY = ContainerSimBASE + 21;
 
 
