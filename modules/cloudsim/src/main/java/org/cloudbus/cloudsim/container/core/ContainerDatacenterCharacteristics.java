@@ -92,6 +92,12 @@ public class ContainerDatacenterCharacteristics {
     private double costPerBw;
 
     /**
+     * The Datacenter's location
+     */
+    private double[] location;
+
+
+    /**
      * Allocates a new DatacenterCharacteristics object. If the time zone is invalid, then by
      * default, it will be GMT+0.
      *
@@ -138,6 +144,37 @@ public class ContainerDatacenterCharacteristics {
         setCostPerMem(costPerMem);
         setCostPerStorage(costPerStorage);
         setCostPerBw(costPerBw);
+    }
+
+
+    public ContainerDatacenterCharacteristics(
+            String architecture,
+            String os,
+            String vmm,
+            List<? extends ContainerHost> hostList,
+            double timeZone,
+            double costPerSec,
+            double costPerMem,
+            double costPerStorage,
+            double costPerBw,
+            double[] location) {
+        setId(-1);
+        setArchitecture(architecture);
+        setOs(os);
+        setHostList(hostList);
+        setAllocationPolicy(allocationPolicy);
+        setCostPerSecond(costPerSec);
+
+        setTimeZone(0.0);
+        this.location = location;
+        setVmm(vmm);
+        setCostPerMem(costPerMem);
+        setCostPerStorage(costPerStorage);
+        setCostPerBw(costPerBw);
+    }
+
+    public double[] getLocation(){
+        return this.location;
     }
 
     /**

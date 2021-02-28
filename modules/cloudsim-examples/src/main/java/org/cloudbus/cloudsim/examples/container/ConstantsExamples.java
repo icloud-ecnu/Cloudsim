@@ -16,13 +16,13 @@ public class ConstantsExamples {
      */
     public static final boolean ENABLE_OUTPUT = true;
     public static final boolean OUTPUT_CSV = false;
-    public static final double SCHEDULING_INTERVAL = 1200D;
+    public static final double SCHEDULING_INTERVAL = 12D;
     public static final double SIMULATION_LIMIT = 87400.0D;
     /**
      * Cloudlet specs
      */
     public static final int CLOUDLET_LENGTH = 4000;
-    public static final int CLOUDLET_PES = 1;
+    public static final int CLOUDLET_PES = 10;
 
     /**
      * Startup delay for VMs and the containers are mentioned here.

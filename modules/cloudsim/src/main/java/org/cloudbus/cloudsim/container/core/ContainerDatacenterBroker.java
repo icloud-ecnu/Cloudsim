@@ -579,20 +579,6 @@ public class ContainerDatacenterBroker extends SimEntity {
 
         sendNow(getDatacenterIdsList().get(0), containerCloudSimTags.CONTAINER_SUBMIT, successfullySubmitted);
 
-//        List<Container> successfullySubmitted = new ArrayList<>();
-//        for (Container container : getContainerList()) {
-//
-//            if (!Log.isDisabled()) {
-//                Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Sending container ",
-//                        container.getId(), " to Datacenter");
-//            }
-//            cloudletsSubmitted++;
-//            vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
-//            getCloudletSubmittedList().add(cloudlet);
-//            successfullySubmitted.add(cloudlet);
-//        }
-
-        // remove submitted cloudlets from waiting list
     }
 
 

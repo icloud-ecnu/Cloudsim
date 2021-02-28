@@ -40,6 +40,7 @@ public class containerCloudSimTags {
 
     //chris tuning:
     public static final int BINDING_CLOUDLET = ContainerSimBASE + 20;
+    public static final int CONTAINER_SCALABILITY = ContainerSimBASE + 21;
 
 
     private containerCloudSimTags() {

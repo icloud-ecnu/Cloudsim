@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.container.core;
 
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.container.lists.ContainerList;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerAllocationPolicy;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerVmAllocationPolicy;
 import org.cloudbus.cloudsim.container.utils.CostumeCSVWriter;
@@ -11,10 +12,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UserSideDatacenter extends PowerContainerDatacenter{
     /**
@@ -27,13 +25,14 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     private List<Integer> newlyCreatedVmsList;
     private double vmStartupDelay;
     private double containerStartupDelay;
-
+    private double[] DatacenterLocation;
 
     public UserSideDatacenter(String name, ContainerDatacenterCharacteristics characteristics,
-                                      ContainerVmAllocationPolicy vmAllocationPolicy,
-                                      ContainerAllocationPolicy containerAllocationPolicy, List<Storage> storageList,
-                                      double schedulingInterval, String experimentName, String logAddress,
-                                      double vmStartupDelay, double containerStartupDelay) throws Exception {
+                              ContainerVmAllocationPolicy vmAllocationPolicy,
+                              ContainerAllocationPolicy containerAllocationPolicy, List<Storage> storageList,
+                              double schedulingInterval, String experimentName, String logAddress,
+                              double vmStartupDelay, double containerStartupDelay
+                             ) throws Exception {
         super(name, characteristics, vmAllocationPolicy, containerAllocationPolicy, storageList, schedulingInterval, experimentName, logAddress);
         String newlyCreatedVmsAddress;
         int index = getExperimentName().lastIndexOf("_");
@@ -46,10 +45,128 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         this.containerStartupDelay = containerStartupDelay;
     }
 
-    @Override
-    protected void updateCloudletProcessing() {
 
-        // Log.printLine("Power data center is Updating the cloudlet processing");
+    public UserSideDatacenter(String name, ContainerDatacenterCharacteristics characteristics,
+                                      ContainerVmAllocationPolicy vmAllocationPolicy,
+                                      ContainerAllocationPolicy containerAllocationPolicy, List<Storage> storageList,
+                                      double schedulingInterval, String experimentName, String logAddress,
+                                      double vmStartupDelay, double containerStartupDelay,
+                                      double []location) throws Exception {
+        super(name, characteristics, vmAllocationPolicy, containerAllocationPolicy, storageList, schedulingInterval, experimentName, logAddress);
+        String newlyCreatedVmsAddress;
+        int index = getExperimentName().lastIndexOf("_");
+        newlyCreatedVmsAddress = String.format("%s/NewlyCreatedVms/%s/%s.csv", getLogAddress(), getExperimentName().substring(0, index), getExperimentName());
+        setNewlyCreatedVmWriter(new CostumeCSVWriter(newlyCreatedVmsAddress));
+        setNewlyCreatedVms(0);
+        setDisableMigrations(false);
+        setNewlyCreatedVmsList(new ArrayList<Integer>());
+        this.vmStartupDelay = vmStartupDelay;
+        this.containerStartupDelay = containerStartupDelay;
+        Random rand = new Random();
+        //We assume the map is 10000km * 10000km
+        this.DatacenterLocation = location;
+    }
+
+    @Override
+    protected void processCloudletSubmit(SimEvent ev, boolean ack) {
+        updateCloudletProcessing(ev);
+
+        try {
+            ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
+            // checks whether this Cloudlet has finished or not
+            if (cl.isFinished()) {
+                String name = CloudSim.getEntityName(cl.getUserId());
+                Log.printConcatLine(getName(), ": Warning - Cloudlet #", cl.getCloudletId(), " owned by ", name,
+                        " is already completed/finished.");
+                Log.printLine("Therefore, it is not being executed again");
+                Log.printLine();
+
+                // NOTE: If a Cloudlet has finished, then it won't be processed.
+                // So, if ack is required, this method sends back a result.
+                // If ack is not required, this method don't send back a result.
+                // Hence, this might cause CloudSim to be hanged since waiting
+                // for this Cloudlet back.
+                if (ack) {
+                    int[] data = new int[3];
+                    data[0] = getId();
+                    data[1] = cl.getCloudletId();
+                    data[2] = CloudSimTags.FALSE;
+
+                    // unique tag = operation tag
+                    int tag = CloudSimTags.CLOUDLET_SUBMIT_ACK;
+                    sendNow(cl.getUserId(), tag, data);
+                }
+                sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+                return;
+            }
+
+            // process this Cloudlet to this CloudResource
+            cl.setResourceParameter(getId(), getCharacteristics().getCostPerSecond(), getCharacteristics()
+                    .getCostPerBw());
+
+
+            //Chris tuning container:
+            int containerId = cl.getContainerId();
+            if(containerId < 0){
+                Log.formatLine("Chris BINDING CLOUDLET: " + CloudSim.clock());
+                sendNow(cl.getUserId(), containerCloudSimTags.BINDING_CLOUDLET, cl);
+                return;
+            }
+            int vmId = cl.getVmId();
+            if(vmId < 0){
+                Log.formatLine("Assign the cloudlet to the located container now.");
+                getContainerList();
+                if(ContainerList.getById(getContainerList(),containerId) == null){
+                    Log.formatLine("Container %d, has not been created and allocated.");
+                    return;
+                }
+                cl.setVmId(ContainerList.getById(getContainerList(),containerId).getVm().getId());
+                vmId = cl.getVmId();
+            }
+            int userId = cl.getUserId();
+            Log.formatLine("chris note: cloudlet id: " + cl.getCloudletId() + " container id: " + containerId
+                    + " VM id: " + cl.getVmId() +  " start time: " + cl.getExecStartTime());
+            // time to transfer the files
+            double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
+
+            ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
+            ContainerVm vm = host.getContainerVm(vmId, userId);
+
+            Container container = vm.getContainer(containerId, userId);
+            double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
+            Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
+
+
+            // if this cloudlet is in the exec queue
+            if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
+                estimatedFinishTime += fileTransferTime;
+                send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);
+            }
+
+            if (ack) {
+                int[] data = new int[3];
+                data[0] = getId();
+                data[1] = cl.getCloudletId();
+                data[2] = CloudSimTags.TRUE;
+
+                // unique tag = operation tag
+                int tag = CloudSimTags.CLOUDLET_SUBMIT_ACK;
+                sendNow(cl.getUserId(), tag, data);
+            }
+        } catch (ClassCastException c) {
+            Log.printLine(String.format("%s.processCloudletSubmit(): ClassCastException error.", getName()));
+            c.printStackTrace();
+        } catch (Exception e) {
+            Log.printLine(String.format("%s.processCloudletSubmit(): Exception error.", getName()));
+            e.printStackTrace();
+        }
+
+        checkCloudletCompletion();
+    }
+
+
+    protected void updateCloudletProcessing(SimEvent ev) {
+        ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
         if (getCloudletSubmitted() == -1 || getCloudletSubmitted() == CloudSim.clock()) {
             CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.VM_DATACENTER_EVENT));
             schedule(getId(), getSchedulingInterval(), CloudSimTags.VM_DATACENTER_EVENT);
@@ -61,16 +178,14 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         if (currentTime > getLastProcessTime() + getSchedulingInterval()) {
             //System.out.print(currentTime + " ");
             Log.formatLine(4, "A new interval starts: current time, " + currentTime + " diff:" + (currentTime - getLastProcessTime()));
+            sendNow(cl.getUserId(), containerCloudSimTags.CONTAINER_SCALABILITY);
             setLastProcessTime(currentTime);
-
         }
 
     }
 
     @Override
     protected void processVmCreate(SimEvent ev, boolean ack) {
-
-//    here we override the method
         if (ev.getData() instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) ev.getData();
             ContainerVm containerVm = (ContainerVm) map.get("vm");

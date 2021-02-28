@@ -432,9 +432,10 @@ public class ContainerHost {
      * @post $result > 0
      */
     public long getBw() {
-        //Log.printLine("Host: Get BW:......" + getContainerVmBwProvisioner().getBw());
         return getContainerVmBwProvisioner().getBw();
     }
+
+
 
     /**
      * Gets the machine memory.
@@ -444,9 +445,15 @@ public class ContainerHost {
      * @post $result > 0
      */
     public float getRam() {
-        //Log.printLine("Host: Get Ram:......" + getContainerVmRamProvisioner().getRam());
-
         return getContainerVmRamProvisioner().getRam();
+    }
+
+    //Chris add.
+    public long getAvailableBw() {
+        return getContainerVmBwProvisioner().getAvailableBw();
+    }
+    public float getAvailableRam() {
+        return getContainerVmRamProvisioner().getAvailableRam();
     }
 
     /**

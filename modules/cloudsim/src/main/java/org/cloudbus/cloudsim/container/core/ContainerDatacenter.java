@@ -515,7 +515,7 @@ public class ContainerDatacenter extends SimEntity {
 
         if (result) {
             getContainerVmList().add(containerVm);
-            Log.printLine(String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId()));
+            Log.formatLine(4, String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId()));
             if (containerVm.isBeingInstantiated()) {
                 containerVm.setBeingInstantiated(false);
             }
