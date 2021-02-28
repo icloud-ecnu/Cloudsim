@@ -845,11 +845,7 @@ public class ContainerDatacenter extends SimEntity {
 
             //Chris tuning container:
             int containerId = cl.getContainerId();
-            if(containerId < 0){
-                  Log.formatLine("Chris BINDING CLOUDLET: " + CloudSim.clock());
-                  sendNow(cl.getUserId(), containerCloudSimTags.BINDING_CLOUDLET, cl);
-                  return;
-            }
+
             int vmId = cl.getVmId();
             if(vmId < 0){
                 Log.formatLine("Assign the cloudlet to the located container now.");
