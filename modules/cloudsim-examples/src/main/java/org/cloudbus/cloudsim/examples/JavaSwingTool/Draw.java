@@ -9,19 +9,12 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 
 import org.jfree.chart.axis.*;
-import org.jfree.chart.labels.CategorySeriesLabelGenerator;
-import org.jfree.chart.labels.CategoryToolTipGenerator;
-import org.jfree.chart.labels.StandardCategorySeriesLabelGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.*;
 
-import org.jfree.chart.renderer.category.BarPainter;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.chart.renderer.category.StandardBarPainter;
-import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.*;
 import org.jfree.chart.title.TextTitle;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
+
 import org.jfree.data.statistics.HistogramDataset;
 
 import org.jfree.data.xy.XYDataset;
@@ -29,36 +22,29 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
-import java.util.*;
 import java.util.List;
 
-
-import org.jfree.util.ShapeUtilities;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.StandardXYBarPainter;
-import org.jfree.chart.renderer.xy.XYBarPainter;
-import org.jfree.chart.renderer.xy.XYBarRenderer;
+
 import javax.swing.border.EmptyBorder;
 
 
 
 
 public class Draw extends JFrame{
-    static JSlider slider1;
-    static JSlider slider2;
-    private List<ContainerCloudlet> cloudletList;
+    private final List<ContainerCloudlet> cloudletList;
     private final int terminated_time;
     private final int interval_length;
     private final int gaussian_mean;
     private final int gaussian_var;
-    private int MIPS = 10;
 
     public Draw(List<ContainerCloudlet> cloudletList, int terminated_time, int interval_length, int gaussian_mean, int gaussian_var) {
         this.cloudletList = cloudletList;
@@ -71,7 +57,6 @@ public class Draw extends JFrame{
         setContentPane(panel);
         pack();
         setLocationRelativeTo(null);
-        JFrame interval_list = createDropdownList();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
@@ -117,16 +102,8 @@ public class Draw extends JFrame{
         contentPane.setBorder(new EmptyBorder(5,5,5,5));
         basis.setContentPane(contentPane);
         contentPane.setLayout(new FlowLayout(FlowLayout.CENTER,5,5));
-        JLabel label=new JLabel("Select an interval to present the detail info of it.");
-        contentPane.add(label);
-        JComboBox comboBox=new JComboBox();
-        for(int i = 0; i < this.terminated_time; i += this.interval_length){
-            String from = timeNumberToString(i);
-            String end = timeNumberToString(i + this.interval_length);
-            String IntervalString;
-            comboBox.addItem(from + " --> " + end);
-        }
-        contentPane.add(comboBox);
+
+        // contentPane.add(comboBox);
         basis.setVisible(true);
         return basis;
     }
@@ -135,142 +112,86 @@ public class Draw extends JFrame{
      * Create the input panel.
      */
     public CustomPanel createInputDataPanel() {
-        CustomPanel panel = new CustomPanel(new GridLayout(5, 1));
-        JPanel controlPanel = new JPanel(new GridLayout(2, 1));
+        CustomPanel panel = new CustomPanel(new GridLayout(3, 1));
 
-        JFreeChart chart1 = createBarChart1();
-
-
-        JFreeChart chart2 = createScatterChart();
+        JFreeChart chart1 = createRequestNumberChartOfAll();
 
 
-        JFreeChart chart3 = createBarChart2();
+        JFreeChart chart2 = createRequestTimeChartOfAll();
 
+        JFreeChart chart3 = createRequestTimeChartOfSingle();
 
-        JFreeChart chart4 = createBarChart3();
+        JLabel label=new JLabel("Select an interval to present the detail info of it: ");
+        DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<String>();
+        JComboBox<String> comboBox = new JComboBox<String>(comboModel);
+        for(int i = 0; i < this.terminated_time; i += this.interval_length){
+            String from = timeNumberToString(i);
+            String end = timeNumberToString(i + this.interval_length);
+            String IntervalString;
+            comboBox.addItem(from + " --> " + end);
+        }
 
-
-        slider1 = createJSlider();
-        slider2 = createJSlider();
-        ChangeListener listener = new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                XYPlot plot1 = (XYPlot)chart1.getPlot();
-                XYPlot plot2 = (XYPlot)chart2.getPlot();
-                CategoryPlot plot3 = (CategoryPlot)chart3.getPlot();
-                XYPlot plot4 = (XYPlot)chart4.getPlot();
-                ValueAxis axis1 = (ValueAxis)plot1.getDomainAxis();
-                ValueAxis axis2 = (ValueAxis)plot2.getDomainAxis();
-                double center = slider1.getValue();
-                double radius = slider2.getValue();
-                double low = center - radius < 0 ? 0 : center - radius;
-                double up = center + radius > terminated_time ? terminated_time : center + radius;
-                axis1.setLowerBound(low);
-                axis1.setUpperBound(up);
-                axis2.setLowerBound(low);
-                axis2.setUpperBound(up);
-
-                plot3.setDataset(getBarChart2Dataset(low, up));
-                plot4.setDataset(getBarChart3Dataset(low, up));
+        comboBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    // 选择的下拉框选项
+                    System.out.println(comboBox.getSelectedIndex());
+                    int index = comboBox.getSelectedIndex();
+                    chart3.setTitle(String.format("Request time's Distribution (%s~%s)", timeNumberToString(index * interval_length), timeNumberToString((index + 1) * interval_length)));
+                    XYPlot plot3 = (XYPlot)chart3.getPlot();
+                    plot3.setDataset(getRequestTimeDataset(index * interval_length, (index + 1) * interval_length));
+                }
             }
-        };
+        });
 
-        slider1.addChangeListener(listener);
-        slider2.addChangeListener(listener);
 
-        JPanel axisPanel1 = new JPanel(new BorderLayout());
-        axisPanel1.add(slider1);
-        axisPanel1.setBorder(new TitledBorder("The Center Of The Visible Range:"));
-        JPanel axisPanel2 = new JPanel(new BorderLayout());
-        axisPanel2.add(slider2);
-        axisPanel2.setBorder(new TitledBorder("The Radius Of The Visible Range:"));
 
-        panel.add((Component)new ChartPanel(chart2, false));
         panel.add((Component)new ChartPanel(chart1, false));
-        panel.add((Component)new ChartPanel(chart4, false));
-        panel.add((Component)new ChartPanel(chart3, false));
-        controlPanel.add(axisPanel1);
-        controlPanel.add(axisPanel2);
-        panel.add(controlPanel);
+        panel.add((Component)new ChartPanel(chart2, false));
+
+
+        JPanel jP = new CustomPanel(new BorderLayout());
+        jP.add((Component)new ChartPanel(chart3, false));
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(label);
+        buttonPanel.add(comboBox);
+
+        jP.add(buttonPanel,BorderLayout.SOUTH);
+
+        panel.add(jP);
 
         return panel;
     }
 
-    private JSlider createJSlider() {
-        JSlider slider = new JSlider(0, terminated_time, terminated_time / 2);
-
-        int major_tick_interval = terminated_time / 12;
-        slider.setMajorTickSpacing(major_tick_interval);
-        slider.setMinorTickSpacing(interval_length);
-        slider.setPaintLabels(true);
-        slider.setPaintTicks(true);
-        slider.setSnapToTicks(true);
-
-        Hashtable<Integer, JComponent> hashtable = new Hashtable<Integer, JComponent>();
-        for(int i=0;i<=12;i++){
-            int current_time = major_tick_interval * i;
-            int hour = current_time /3600;
-            int minute = current_time % 60;
-            hashtable.put(current_time, new JLabel(String.format("%02d:%02d", hour, minute)));      //  0  刻度位置，显示 "Start"
-        }
-        slider.setLabelTable(hashtable);
-
-        return slider;
-    }
-
-
-    private JFreeChart createScatterChart() {
-        XYSeries series1 = new XYSeries("(Start Time, Request Time) ");
-        for(ContainerCloudlet cl : cloudletList){
-            double time = (double)cl.getCloudletLength() /(this.MIPS * ConstantsExamples.CLOUDLET_PES);
-            series1.add(cl.getExecStartTime(), time);
-        }
+    private JFreeChart createRequestNumberChartOfAll() {
+        int interval_nums = terminated_time / interval_length + 1;
+        int[] requestNumbers = new int[interval_nums];
         XYSeriesCollection dataset = new XYSeriesCollection();
-        dataset.addSeries(series1);
-
-        JFreeChart chart = ChartFactory.createScatterPlot(
-                "New Request aside by time clock",
-                "Start Time",
-                "Request Time (min)",
-                dataset,
-                PlotOrientation.VERTICAL,
-                false,
-                true,
-                false
-        );
-        chart = DecorateChart(chart);
-
-
-        XYPlot plot = (XYPlot)chart.getPlot();
-        NumberAxis xAxis = (NumberAxis)plot.getDomainAxis();
-        xAxis.setNumberFormatOverride(getNumberFormat());
-        xAxis.setLowerBound(0);
-        xAxis.setUpperBound(terminated_time);
-        xAxis.setTickUnit(new NumberTickUnit(terminated_time / 24));
-        //modification
-        Shape circle = ShapeUtilities.createDownTriangle(1);
-        //Shape cross = ShapeUtilities.createDiagonalCross(3,1);
-        XYItemRenderer renderer = plot.getRenderer();
-        renderer.setDefaultToolTipGenerator(new TimeToolTipGenerator(0));
-        renderer.setSeriesShape(0,circle);
-        return chart;
-    }
-
-    private JFreeChart createBarChart1() {
-
+        XYSeries series = new XYSeries("");
         // createDataset
         double[] startTimes = new double[cloudletList.size()];
-        for(int i=0;i<cloudletList.size();i++){
-            startTimes[i] = cloudletList.get(i).getExecStartTime();
+        for (ContainerCloudlet containerCloudlet : cloudletList) {
+            // startTimes[i] = cloudletList.get(i).getExecStartTime();
+            requestNumbers[(int) containerCloudlet.getExecStartTime() / interval_length]++;
         }
 
-        HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("(Start Time, Request Number) ", startTimes, (int)(terminated_time / interval_length), 0D, (double) terminated_time);
+        int max_num = -1, min_num = 100000;
+        for(int i=0;i<interval_nums;i++){
+            if(requestNumbers[i] != 0) {
+                series.add(i*interval_length + interval_length / 2, requestNumbers[i]);
+                if(requestNumbers[i] > max_num) max_num = requestNumbers[i];
+                if(requestNumbers[i] < min_num) min_num = requestNumbers[i];
+            }
+        }
+        dataset.addSeries(series);
 
-        JFreeChart chart = ChartFactory.createHistogram(
+        JFreeChart chart = ChartFactory.createXYLineChart(
                 "Request Start Time's Distribution",
                 "Start Time",
                 "Request Number",
-                dataset, PlotOrientation.VERTICAL,
+                dataset,
+                PlotOrientation.VERTICAL,
                 false,
                 true,
                 false
@@ -282,12 +203,11 @@ public class Draw extends JFrame{
         plot.setDomainPannable(true);
         plot.setRangePannable(true);
         plot.setForegroundAlpha(0.85F);
-        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
-        yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        XYBarRenderer renderer = (XYBarRenderer)plot.getRenderer();
-        renderer.setDrawBarOutline(false);
-        renderer.setBarPainter((XYBarPainter)new StandardXYBarPainter());
-        renderer.setShadowVisible(false);
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
+        renderer.setDefaultShapesVisible(true);
+        renderer.setDefaultShapesFilled(true);
         renderer.setDefaultToolTipGenerator(new TimeToolTipGenerator(interval_length/2));
 
         NumberAxis xAxis = (NumberAxis)plot.getDomainAxis();
@@ -295,6 +215,10 @@ public class Draw extends JFrame{
         xAxis.setUpperBound(terminated_time);
         xAxis.setNumberFormatOverride(getNumberFormat());
         xAxis.setTickUnit(new NumberTickUnit(terminated_time/24));
+
+        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
+        yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+        yAxis.setRange(min_num * 99 / 100, max_num * 100 / 99);
         return chart;
     }
 
@@ -316,52 +240,12 @@ public class Draw extends JFrame{
 
     }
 
-    private JFreeChart createBarChart2() {
-        CategoryDataset dataset = getBarChart2Dataset(0, terminated_time);
 
-        JFreeChart chart = ChartFactory.createBarChart(
-                "Request Number of Each Interval's Distribution",
-                "Request Number",
-                "Interval Number",
-                (CategoryDataset)dataset
-        );
-        //This chart's type is different from the others.
-        Font titleFont = new Font("Arial", Font.BOLD , 18) ;
-        Font font = new Font("Arial",Font.PLAIN,12) ;
-        Font yfont = new Font("Arial",Font.BOLD,12) ;
-        chart.setTitle(new TextTitle(chart.getTitle().getText(),titleFont));
+    private JFreeChart createRequestTimeChartOfAll() {
 
-        CategoryPlot plot = (CategoryPlot)chart.getPlot();
-        CategoryAxis domainAxis = plot.getDomainAxis();
-        domainAxis.setLabelFont(font);
-        //domainAxis.setCategoryLabelPositions(CategoryLabelPositions.UP_45);
-
-        ValueAxis rangeAxis = plot.getRangeAxis();
-        rangeAxis.setLabelFont(yfont);
-        rangeAxis.setTickLabelFont(yfont);
-
-
-
-        plot.setDomainGridlinesVisible(true);
-        plot.setRangeCrosshairVisible(true);
-        plot.setRangeCrosshairPaint(Color.BLUE);
-        plot.getDomainAxis().setCategoryMargin(0.2D);
-       // NumberAxis rangeAxis = (NumberAxis)plot.getRangeAxis();
-        rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-        BarRenderer renderer = (BarRenderer)plot.getRenderer();
-        renderer.setDrawBarOutline(false);
-        renderer.setBarPainter((BarPainter)new StandardBarPainter());
-        renderer.setItemMargin(0.06D);
-        // renderer.setLegendItemToolTipGenerator((CategorySeriesLabelGenerator)new StandardCategorySeriesLabelGenerator("Tooltip: {0}"));
-        renderer.setDefaultToolTipGenerator(new MyCategoryToolTipGenerator());
-        return chart;
-    }
-
-    private JFreeChart createBarChart3() {
-
-        HistogramDataset dataset = getBarChart3Dataset(0, terminated_time);
+        HistogramDataset dataset = getRequestTimeDataset(0, terminated_time);
         JFreeChart chart = ChartFactory.createHistogram(
-                "Request time's Distribution",
+                "Request time's Distribution (ALl Interval)",
                 "Request Time (min)",
                 "Request Number",
                 dataset, PlotOrientation.VERTICAL,
@@ -384,36 +268,34 @@ public class Draw extends JFrame{
         return chart;
     }
 
-    private CategoryDataset getBarChart2Dataset(double low, double up) {
-        int interval_num = (terminated_time / interval_length);
-        // createDataset
-        int[] interval_num_arr = new int[interval_num];
-        int max_num = -1;
-        for (ContainerCloudlet containerCloudlet : cloudletList) {
-            double currentValue = containerCloudlet.getExecStartTime();
-            if(currentValue >= low && currentValue < up) {
-                int index = (int) (currentValue / interval_length);
-                interval_num_arr[index]++;
-                max_num = Math.max(max_num, (int) (interval_num_arr[index]));
-            }
-        }
-
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        int[] count = new int[max_num];
-        for (int v : interval_num_arr) {
-            if(v > 0) {
-                count[v - 1]++;
-            }
-        }
-
-        for(int i=0;i<count.length;i++) {
-            dataset.addValue(count[i], "Request Number", Integer.toString(i + 1));
-        }
-
-        return (CategoryDataset)dataset;
+    private JFreeChart createRequestTimeChartOfSingle() {
+        HistogramDataset dataset = getRequestTimeDataset(0, interval_length - 1);
+        JFreeChart chart = ChartFactory.createHistogram(
+                String.format("Request time's Distribution (%s~%s)", timeNumberToString(0), timeNumberToString(interval_length)),
+                "Request Time (min)",
+                "Request Number",
+                dataset, PlotOrientation.VERTICAL,
+                false,
+                true,
+                false
+        );
+        chart = DecorateChart(chart);
+        XYPlot plot = (XYPlot)chart.getPlot();
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        plot.setForegroundAlpha(0.85F);
+        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
+        yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+        XYBarRenderer renderer = (XYBarRenderer)plot.getRenderer();
+        renderer.setDrawBarOutline(false);
+        renderer.setBarPainter((XYBarPainter)new StandardXYBarPainter());
+        renderer.setShadowVisible(false);
+        renderer.setDefaultToolTipGenerator(new MyXYToolTipGenerator());
+        return chart;
     }
 
-    private HistogramDataset getBarChart3Dataset(double low, double up) {
+
+    private HistogramDataset getRequestTimeDataset(double low, double up) {
         // createDataset
         int length = 0, index = 0;
         for (ContainerCloudlet containerCloudlet : cloudletList) {
@@ -423,7 +305,8 @@ public class Draw extends JFrame{
             }
         }
         double[] data = new double[length];
-        int total_mips = this.MIPS * ConstantsExamples.CLOUDLET_PES;
+        int MIPS = 10;
+        int total_mips = MIPS * ConstantsExamples.CLOUDLET_PES;
         for (ContainerCloudlet containerCloudlet : cloudletList) {
             double currentValue = containerCloudlet.getExecStartTime();
             if(currentValue >= low && currentValue < up) {
@@ -432,7 +315,6 @@ public class Draw extends JFrame{
             }
         }
 
-        Log.printLine("low:"+low+"\nup:"+up+"\nlength:"+length+"\n");
         HistogramDataset dataset = new HistogramDataset();
         dataset.addSeries("(Request Length, Request Number) ", data, gaussian_var / 5, (double)(gaussian_mean - gaussian_var/2) / total_mips, (double) (gaussian_mean + gaussian_var/2) / total_mips);
         return dataset;
@@ -445,8 +327,9 @@ public class Draw extends JFrame{
         }
         @Override
         public String generateToolTip(XYDataset xyDataset, int i, int i1) {
-            int time = (int)(xyDataset.getXValue(i, i1)) - offset;
-            return String.format("%s, %.1f", timeNumberToString(time), xyDataset.getYValue(i,i1));
+            int time1 = (int)(xyDataset.getXValue(i, i1)) - offset;
+            int time2 = (int)(xyDataset.getXValue(i, i1)) + interval_length - offset;
+            return String.format("%s~%s, %.1f", timeNumberToString(time1), timeNumberToString(time2), xyDataset.getYValue(i,i1));
         }
     }
 
@@ -454,14 +337,6 @@ public class Draw extends JFrame{
         @Override
         public String generateToolTip(XYDataset xyDataset, int i, int i1) {
             return String.format("%s", xyDataset.getYValue(i,i1));
-        }
-    }
-
-    private static class MyCategoryToolTipGenerator implements CategoryToolTipGenerator {
-
-        @Override
-        public String generateToolTip(CategoryDataset categoryDataset, int i, int i1) {
-            return String.format("%s", categoryDataset.getValue(i, i1));
         }
     }
 
@@ -501,7 +376,8 @@ public class Draw extends JFrame{
             int interval_length_test = 20 * 60; // 20 minutes
             int gaussian_mean_test = 1000;
             int gaussian_var_test = 100;
-            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time_test, interval_length_test, 3, gaussian_mean_test, gaussian_var_test);
+            int poisson_lambda_test = 10000;
+            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time_test, interval_length_test, poisson_lambda_test, gaussian_mean_test, gaussian_var_test);
             List<ContainerCloudlet>  cloudletList_test = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList_test){
                 cl.setUserId(brokerId);
