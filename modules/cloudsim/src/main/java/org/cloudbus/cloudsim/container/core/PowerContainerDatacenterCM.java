@@ -256,7 +256,6 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                 incrementNewlyCreatedVmsCount();
                 getContainerVmList().add(containerVm);
 
-
                 if (containerVm.isBeingInstantiated()) {
                     containerVm.setBeingInstantiated(false);
                 }

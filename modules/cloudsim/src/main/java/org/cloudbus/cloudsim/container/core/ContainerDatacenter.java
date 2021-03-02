@@ -288,6 +288,7 @@ public class ContainerDatacenter extends SimEntity {
         List<Container> containerList = (List<Container>) ev.getData();
 
         for (Container container : containerList) {
+
             boolean result = getContainerAllocationPolicy().allocateVmForContainer(container, getContainerVmList());
             if (ack) {
                 int[] data = new int[3];
@@ -302,7 +303,7 @@ public class ContainerDatacenter extends SimEntity {
                     data[0] = containerVm.getId();
                     if(containerVm.getId() == -1){
 
-                        Log.printConcatLine("The ContainerVM ID is not known (-1) !");
+                        Log.formatLine(4, "The ContainerVM ID is not known (-1) !");
                     }
 //                    Log.printConcatLine("Assigning the container#" + container.getUid() + "to VM #" + containerVm.getUid());
                     getContainerList().add(container);
@@ -313,7 +314,7 @@ public class ContainerDatacenter extends SimEntity {
                 } else {
                     data[0] = -1;
                     //notAssigned.add(container);
-                    Log.formatLine(String.format("Couldn't find a vm to host the container #%s", container.getUid()));
+                    Log.formatLine(4, String.format("Couldn't find a vm to host the container #%s", container.getUid()));
                 }
                 send(ev.getSource(), CloudSim.getMinTimeBetweenEvents(), containerCloudSimTags.CONTAINER_CREATE_ACK, data);
 
@@ -515,7 +516,8 @@ public class ContainerDatacenter extends SimEntity {
 
         if (result) {
             getContainerVmList().add(containerVm);
-            Log.formatLine(4, String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId()));
+            Log.formatLine(4, String.format("%s VM ID #%d is created on Host #%d in Datacenter #%d",
+                    CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId(),containerVm.getHost().getDatacenter().getId()) );
             if (containerVm.isBeingInstantiated()) {
                 containerVm.setBeingInstantiated(false);
             }

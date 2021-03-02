@@ -108,7 +108,7 @@ public class PowerContainerDatacenter extends ContainerDatacenter {
      */
     @Override
     protected void updateCloudletProcessing() {
-//        Log.printLine("Power data center is Updating the cloudlet processing");
+        Log.printLine("Power data center is Updating the cloudlet processing");
         if (getCloudletSubmitted() == -1 || getCloudletSubmitted() == CloudSim.clock()) {
             CloudSim.cancelAll(getId(), new PredicateType(CloudSimTags.VM_DATACENTER_EVENT));
             schedule(getId(), getSchedulingInterval(), CloudSimTags.VM_DATACENTER_EVENT);
@@ -206,7 +206,7 @@ public class PowerContainerDatacenter extends ContainerDatacenter {
         double timeFrameDatacenterEnergy = 0.0;
 
 
-        Log.printLine("\n\n--------------------------------------------------------------\n\n");
+        Log.formatLine("\n\n--------------------------------------------------------------\n\n");
         Log.formatLine("Power data center: New resource usage for the time frame starting at %.2f:", currentTime);
 
 

@@ -260,9 +260,9 @@ public class ContainerDatacenterBroker extends SimEntity {
 
 //            ContainerVm p= ContainerVmList.getById(getVmsCreatedList(), vmId);
             int hostId = ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId();
-            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": The Container #", containerId,
-                     ", is created on Vm #",vmId
-                    , ", On Host#", hostId);
+            Log.formatLine(4, CloudSim.clock() + ": " + getName() +": The Container #" + containerId +
+                     ", is created on Vm #" + vmId
+                    + ", On Host#"+ hostId + " in datacenter " +  ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getDatacenter().getId());
             setContainersCreated(getContainersCreated()+1);}
         } else {
             //Container container = ContainerList.getById(getContainerList(), containerId);
@@ -329,7 +329,8 @@ public class ContainerDatacenterBroker extends SimEntity {
         } else {
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Creation of VM #", vmId,
                     " failed in Datacenter #", datacenterId);
-        }}
+        }
+    }
     /**
      * Process the ack received due to a request for VM creation.
      *

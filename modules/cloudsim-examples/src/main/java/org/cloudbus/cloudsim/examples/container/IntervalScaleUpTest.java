@@ -42,14 +42,24 @@ public class IntervalScaleUpTest {
 
     private static UserSideBroker broker;
 
+    private static Map<Integer, ContainerDatacenterCharacteristics> local_characteristics;
+
     //host and vm description. We just concentrate on the containers.
     private static int ram = 2048; //host memory (MB)
     private static long storage = 1000000; //host storage
     private static int bw = 10000;
     private static int pesNumber = 2000;
-    private static int mips = 1000;
+    private static int mips = 10000;
     private static int ContainerNumPerVm = 50;
 //    private static int CloudletNumPerContainer = 5;
+
+
+    //The variables in cloudLet distribution
+    private static int terminated_time = 12000;
+    private static int interval_length = 1200;
+    private static int Poisson_lambda = 100;
+    private static int Gaussian_mean = 1000;
+    private static int Gaussian_var = 1000;
 
     public static void main(String[] args) {
 
@@ -61,14 +71,15 @@ public class IntervalScaleUpTest {
             double underUtilizationThreshold = 0.70;
             int overBookingFactor = 80;
             int DatacenterNumber = 4;
-            int HostNumber = DatacenterNumber * 10;
+            int HostNumber = DatacenterNumber * 100;
             int VmNumber = HostNumber;
             int ContainerNumber = 4;
             int num_user = 1;   // number of cloud users
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
+            local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
 
-            Log.set_log_level(1);
+            Log.set_log_level(4);
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
@@ -86,9 +97,7 @@ public class IntervalScaleUpTest {
             ContainerAllocationPolicy containerAllocationPolicy = new PowerContainerAllocationPolicySimple();
             PowerContainerVmSelectionPolicy vmSelectionPolicy = new PowerContainerVmSelectionPolicyMaximumUsage();
             HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyFirstFit();
-            ContainerVmAllocationPolicy vmAllocationPolicy = new
-                    PowerContainerVmAllocationPolicyMigrationAbstractHostSelection(hostList, vmSelectionPolicy,
-                    hostSelectionPolicy, overUtilizationThreshold, underUtilizationThreshold);
+
 
 
             // Second step: Create Datacenters
@@ -96,8 +105,12 @@ public class IntervalScaleUpTest {
             Random rand = new Random();
             for(int i = 0; i < DatacenterNumber; i++) {
                 double[] location = new double[]{rand.nextInt(10000), rand.nextInt(10000)};
+                List<ContainerHost> subhostList = hostList.subList(hostList.size() / DatacenterNumber * i, hostList.size() / DatacenterNumber * (i + 1));
+                ContainerVmAllocationPolicy vmAllocationPolicy = new
+                        PowerContainerVmAllocationPolicyMigrationAbstractHostSelection(subhostList, vmSelectionPolicy,
+                        hostSelectionPolicy, overUtilizationThreshold, underUtilizationThreshold);
                 UserSideDatacenter e1 = (UserSideDatacenter) createDatacenter("datacenter" + i,
-                        PowerContainerDatacenterCM.class, hostList.subList(hostList.size() / DatacenterNumber * i, hostList.size() / DatacenterNumber * (i + 1)),
+                        PowerContainerDatacenterCM.class, subhostList,
                         vmAllocationPolicy, containerAllocationPolicy,
                         getExperimentName("IntervalScaleUpTest", String.valueOf(overBookingFactor)),
                         ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
@@ -108,14 +121,13 @@ public class IntervalScaleUpTest {
             broker.submitVmList(vmlist);
             broker.submitContainerList(containerlist);
 
-//            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(12000, 1200,
-//                    10000,
-//                    100, 100);
-            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(120, 12,
-                    10, 10, 1);
+
+            BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
+                    Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
+                Log.formatLine(4, "cloudlet id: " + cl.getCloudletId() + " length is " + cl.getCloudletLength());
             }
             broker.submitCloudletList(cloudletList);
 //            Draw pre = new Draw(cloudletList, 12000, 1200, 100, 100);
@@ -168,10 +180,11 @@ public class IntervalScaleUpTest {
         ContainerDatacenterCharacteristics characteristics = new
                 ContainerDatacenterCharacteristics(arch, os, vmm, hostList, time_zone, cost, costPerMem, costPerStorage,
                 costPerBw, location);
+
         ContainerDatacenter datacenter = new UserSideDatacenter(name, characteristics, vmAllocationPolicy,
                 containerAllocationPolicy, new LinkedList<Storage>(), schedulingInterval, experimentName, logAddress,
                 VMStartupDelay, ContainerStartupDelay, location);
-
+        local_characteristics.put(datacenter.getId(), characteristics);
         return datacenter;
     }
 
@@ -243,14 +256,12 @@ public class IntervalScaleUpTest {
 
         try {
             double [] UserCoo = new double[]{0, 0};
-//            UserCoo[0] = 0;
-//            UserCoo[1] = 0;
             Container c = new PowerContainer(IDs.pollId(Container.class),
                     -1,
                     (double) ConstantsExamples.CONTAINER_MIPS[0],
                     ConstantsExamples.CONTAINER_PES[0], ConstantsExamples.CONTAINER_RAM[0], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
                     new ContainerCloudletSchedulerDynamicWorkload(ConstantsExamples.CONTAINER_MIPS[0], ConstantsExamples.CONTAINER_PES[0]), ConstantsExamples.SCHEDULING_INTERVAL);
-            broker = new UserSideBroker("Broker", overBookingFactor, c, UserCoo);
+            broker = new UserSideBroker("Broker", overBookingFactor, c, UserCoo, interval_length);
         } catch (Exception var2) {
             var2.printStackTrace();
             System.exit(0);

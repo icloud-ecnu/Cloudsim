@@ -21,7 +21,7 @@ public class ConstantsExamples {
     /**
      * Cloudlet specs
      */
-    public static final int CLOUDLET_LENGTH = 4000;
+    public static final int CLOUDLET_LENGTH = 40;
     public static final int CLOUDLET_PES = 10;
 
     /**
