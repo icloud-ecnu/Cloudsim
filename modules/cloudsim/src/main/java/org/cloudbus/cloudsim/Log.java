@@ -41,12 +41,19 @@ public class Log {
 	 */
 	private static int log_level = 0;
 
+	private static boolean AcrossDatacenterSHOW = false;
 
-	/**
-	 * Prints a message.
-	 * 
-	 * @param message the message
-	 */
+
+	public static void setAcrossDatacenterSHOW(boolean flag){
+		AcrossDatacenterSHOW = flag;
+	}
+
+	public static void AcrossDatacenterInfo(String format, Object... args) {
+		if (!isDisabled() && AcrossDatacenterSHOW) {
+			printLine(String.format(format, args));
+		}
+	}
+
 	public static void print(String message) {
 		if (!isDisabled()) {
 			try {
@@ -87,6 +94,8 @@ public class Log {
 			print(LINE_SEPARATOR);
 		}
 	}
+
+
 
 
 	/**

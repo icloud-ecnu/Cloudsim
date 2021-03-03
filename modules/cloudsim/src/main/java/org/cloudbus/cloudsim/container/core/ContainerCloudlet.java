@@ -10,7 +10,15 @@ import java.util.List;
  */
 public class ContainerCloudlet extends Cloudlet {
     public int containerId = -1;
+    private double DelayFactor = -1;
 
+    public double getDelayFactor(){
+        return this.DelayFactor;
+    }
+
+    public void setDelayFactor(double delay){
+        this.DelayFactor = delay;
+    }
 
     public ContainerCloudlet(int cloudletId, long cloudletLength, int pesNumber, long cloudletFileSize, long cloudletOutputSize, UtilizationModel utilizationModelCpu, UtilizationModel utilizationModelRam, UtilizationModel utilizationModelBw) {
 

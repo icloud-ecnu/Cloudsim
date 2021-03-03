@@ -137,6 +137,42 @@ public class Container {
 
 
     /**
+     * The time this container been created.
+     */
+    private double StartUpTime;
+
+    /**
+     *The time this container been destroyed.
+     */
+    private double DestroyedTime;
+    private double TotalCost;
+
+    public void setStartUpTime(double startUpTime) {
+        this.StartUpTime = startUpTime;
+    }
+
+    public double getStartUpTime(){
+        return this.StartUpTime;
+    }
+
+    public void setDestroyedTime(double DestroyedTime) {
+        this.DestroyedTime = DestroyedTime;
+    }
+
+    public double getDestroyedTime(){
+        return this.DestroyedTime;
+    }
+
+    public void setTotalCost(double TotalCost) {
+        this.TotalCost = TotalCost;
+    }
+
+    public double getTotalCost(){
+        return this.TotalCost;
+    }
+
+
+    /**
      * Creates a new Container object.
      * @param id
      * @param userId

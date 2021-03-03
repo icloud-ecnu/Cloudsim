@@ -302,7 +302,6 @@ public class ContainerDatacenter extends SimEntity {
                     ContainerVm containerVm = getContainerAllocationPolicy().getContainerVm(container);
                     data[0] = containerVm.getId();
                     if(containerVm.getId() == -1){
-
                         Log.formatLine(4, "The ContainerVM ID is not known (-1) !");
                     }
 //                    Log.printConcatLine("Assigning the container#" + container.getUid() + "to VM #" + containerVm.getUid());
@@ -310,6 +309,7 @@ public class ContainerDatacenter extends SimEntity {
                     if (container.isBeingInstantiated()) {
                         container.setBeingInstantiated(false);
                     }
+                    container.setStartUpTime(CloudSim.clock());
                     container.updateContainerProcessing(CloudSim.clock(), getContainerAllocationPolicy().getContainerVm(container).getContainerScheduler().getAllocatedMipsForContainer(container));
                 } else {
                     data[0] = -1;

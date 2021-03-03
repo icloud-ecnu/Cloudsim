@@ -19,6 +19,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     private boolean Status_stale = false;
     private int SynchronizationCount = 0;
     private int CurrentOptimalDatacenterId = -1;
+    private double CurrentDelay ;
     private ArrayList<SimEvent> SynchronizationList = new ArrayList<SimEvent>();
 
     @Override
@@ -59,8 +60,10 @@ public class UserSideBroker extends ContainerDatacenterBroker{
                 break;
             case containerCloudSimTags.DATACENTER_STATUS_UPDATE:
                 processDatacenterStatusUpdate(ev);
-
                 break;
+//            case containerCloudSimTags.CLOUDLET_DEALY_SETTING:
+//                double[] data = (double [])ev.getData();
+//                getCloudletReceivedList()
 
             // other unknown tags are processed by this method
             default:
@@ -82,14 +85,15 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         this.coordinate[0] = coordinate[0];
         this.coordinate[1] = coordinate[1];
         this.DatacenterStatusUpdateInterval =  interval / 10;
+
     }
 
-    public void setCoordinate(double[] a) {
+    public void setLocation(double[] a) {
         this.coordinate[0] = a[0];
         this.coordinate[1] = a[1];
     }
 
-    public double[] getCoordinate(){
+    public double[] getLocation(){
         return this.coordinate;
     }
 
@@ -97,17 +101,20 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     protected void processDatacenterStatusUpdate(SimEvent ev){
         SynchronizationCount++;
         SynchronizationList.add(ev);
+        Log.AcrossDatacenterInfo(CloudSim.clock() + " Synchronization get info from datacenter " + ev.getSource());
         if(SynchronizationCount == getDatacenterIdsList().size()){
-//            double[] data;
+            Log.AcrossDatacenterInfo(CloudSim.clock() + " Synchronization processing... " );
             double max_value = Double.MAX_VALUE;
             for(SimEvent obj : SynchronizationList){
                 double[] data = (double[])obj.getData();
-                double approximate_res = FactorCombination(data[1], data[2]);
+                double approximate_res = data[1];
                 if(max_value > approximate_res){
                     max_value = approximate_res;
                     CurrentOptimalDatacenterId = (int)data[0];
+                    CurrentDelay = approximate_res;
                 }
             }
+            Log.AcrossDatacenterInfo(CloudSim.clock() + " Synchronization RESULT: SET THE OPTIMAL DATACENTER ID: " + CurrentOptimalDatacenterId );
             SynchronizationCount = 0;
             SynchronizationList.clear();
         }
@@ -151,15 +158,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 ////        Log.formatLine(5, "create a new container in datacenter: " + OptimalDatacenter);
 //        return OptimalDatacenter;
 //    }
-    public double FactorCombination(double TransmissionDistance, double CpuUtilization){
-        double DelayNormalization = TransmissionDistance / 11400;
-        return 0 * DelayNormalization + 0.8 * CpuUtilization;
-    }
 
-    public double FactorCombination(double TransmissionDistance, double CpuUtilization, double MemoryUtilization, double BwUtilization) {
-        double DelayNormalization = TransmissionDistance / 11400;
-        return 0.5 * DelayNormalization +  0.3 * CpuUtilization + 0.1 * MemoryUtilization + 0.1 * BwUtilization;
-    }
+
 
     @Override
     protected void processResourceCharacteristics(SimEvent ev) {
@@ -230,7 +230,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             Status_stale = true;
         if(Status_stale){
             for(int i = 0; i < getDatacenterIdsList().size(); i++)
-                sendNow(getDatacenterIdsList().get(i), containerCloudSimTags.DATACENTER_STATUS_UPDATE);
+                sendNow(getDatacenterIdsList().get(i), containerCloudSimTags.DATACENTER_STATUS_UPDATE, getLocation());
             LastUpdateTime = CloudSim.clock();
         }
         Log.formatLine(4, "Create another 8 containers." );
@@ -243,7 +243,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     public int processContainerCreate(){
         List<Container> l = new ArrayList<Container>(1);
         Container con = new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips(),
-                const_container.getNumberOfPes() , //a little change to initialize
+                const_container.getNumberOfPes() ,
                 (int)const_container.getRam(),
                 const_container.getBw(), const_container.getSize(),
                 const_container.getContainerManager(), const_container.getContainerCloudletScheduler(),
@@ -315,7 +315,6 @@ public class UserSideBroker extends ContainerDatacenterBroker{
                         iterator.remove();//使用迭代器的删除方法删除
                     }
                 }
-
                 setContainersCreatedList(new_list);
                 sendNow(con.getVm().getHost().getDatacenter().getId(), containerCloudSimTags.CONTAINER_REMOVE, con);
                 Log.formatLine(4, "Chris note: Scale down. Current container size: " + getContainersCreatedList().size()

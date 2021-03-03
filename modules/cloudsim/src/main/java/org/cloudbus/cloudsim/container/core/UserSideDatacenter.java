@@ -27,6 +27,8 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     private double containerStartupDelay;
     private double[] DatacenterLocation;
     private static int ContainerPesNumber = -1;
+    public static double TotalContainerCost = 0.0;
+    public static ArrayList<Container> AllContainers = new ArrayList<Container>();
 
     public UserSideDatacenter(String name, ContainerDatacenterCharacteristics characteristics,
                               ContainerVmAllocationPolicy vmAllocationPolicy,
@@ -223,6 +225,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
                 Container con = (Container)ev.getData();
                 for(ContainerVm vm : getContainerVmList()){
                     if(vm.getId() == con.getVm().getId()){
+                        AccumulateCostOfContainer(con);
                         vm.containerDestroy(con);
                         break;
                     }
@@ -235,19 +238,47 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         }
     }
 
+    protected void AccumulateCostOfContainer(Container con){
+        double duration = CloudSim.clock() - con.getStartUpTime(); // we add this attribute.
+        double cost = duration * getCharacteristics().getCostPerSecond();
+        Log.formatLine(100,"Container " + con.getId() + " is to be removed. Its accumulated cost is: " + cost);
+        con.setDestroyedTime(CloudSim.clock());
+        con.setTotalCost(cost);
+        AllContainers.add(con);
+        TotalContainerCost += cost;
+    }
 
     protected void GetLatestDatacenterInfoAndSendBack(SimEvent ev){
-        double []data = new double[3];
-        int UsedPesNumber  = 0;
+        double []data = new double[2];
+        data[0] = getId();
+        data[1] = getDelayFactorToUser(ev);
+        sendNow(ev.getSource(),ev.getTag(),data);
+        Log.AcrossDatacenterInfo(CloudSim.clock() + " Synchronization send back from datacenter " + getId());
+    }
 
+    public double getDelayFactorToUser(SimEvent ev){
+        double[] SourceLocation = (double[])ev.getData();
+        int UsedPesNumber  = 0;
         UsedPesNumber = getContainerList().size() * ContainerPesNumber;
         int TotalPesNumber = getHostList().size() * getHostList().get(0).getNumberOfPes();
         double CpuUtilization = (double)UsedPesNumber / (double)TotalPesNumber;
-        double distance = Math.sqrt(DatacenterLocation[0] * DatacenterLocation[0] + DatacenterLocation[1] * DatacenterLocation[1]);
-        data[0] = getId();
-        data[1] = distance;
-        data[2] = CpuUtilization;
-        sendNow(ev.getSource(),ev.getTag(),data);
+        double delta_x = DatacenterLocation[0] - SourceLocation[0];
+        double delta_y = DatacenterLocation[1] - SourceLocation[1];
+        double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+        double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
+        return 0.5 * DelayNormalization + 0.5 * CpuUtilization;
+    }
+
+    public double getDelayFactorToUser(){
+        int UsedPesNumber  = 0;
+        UsedPesNumber = getContainerList().size() * ContainerPesNumber;
+        int TotalPesNumber = getHostList().size() * getHostList().get(0).getNumberOfPes();
+        double CpuUtilization = (double)UsedPesNumber / (double)TotalPesNumber;
+        double delta_x = DatacenterLocation[0] - 0.0;
+        double delta_y = DatacenterLocation[1] - 0.0;
+        double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+        double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
+        return 0.5 * DelayNormalization + 0.5 * CpuUtilization;
     }
 
 
@@ -295,7 +326,6 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
             cl.setResourceParameter(getId(), getCharacteristics().getCostPerSecond(), getCharacteristics()
                     .getCostPerBw());
 
-
             //Chris tuning container:
             int containerId = cl.getContainerId();
 
@@ -322,7 +352,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
             Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
-
+            cl.setDelayFactor(getDelayFactorToUser());
 
             // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
@@ -336,9 +366,15 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
                 data[1] = cl.getCloudletId();
                 data[2] = CloudSimTags.TRUE;
 
-                // unique tag = operation tag
                 int tag = CloudSimTags.CLOUDLET_SUBMIT_ACK;
                 sendNow(cl.getUserId(), tag, data);
+                //send back the delay information
+//                double[] delay = new double[3];
+//                delay[0] = getId();
+//                delay[1] = cl.getVmId();
+//                delay[2] = getDelayFactorToUser();
+//                sendNow(cl.getUserId(), containerCloudSimTags.CLOUDLET_DEALY_SETTING, delay);
+
             }
         } catch (ClassCastException c) {
             Log.printLine(String.format("%s.processCloudletSubmit(): ClassCastException error.", getName()));

@@ -79,7 +79,8 @@ public class IntervalScaleUpTest {
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
 
-            Log.set_log_level(4);
+            Log.set_log_level(10);
+            Log.setAcrossDatacenterSHOW(true);
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
@@ -137,15 +138,20 @@ public class IntervalScaleUpTest {
             printContainerList(broker.getContainersCreatedList());
 
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
+            drawContainerLifeCycle(UserSideDatacenter.AllContainers);
             printCloudletList(newList);
-
             CloudSim.stopSimulation();
+
             Log.printLine("Interval Scale Up Test finished!");
         }
         catch (Exception e) {
             e.printStackTrace();
             Log.printLine("The simulation has been terminated due to an unexpected error");
         }
+    }
+
+    private static void drawContainerLifeCycle(ArrayList<Container> ContainerList){
+        printContainerList(ContainerList);
     }
 
     private static String getExperimentName(String... args) {
@@ -270,26 +276,26 @@ public class IntervalScaleUpTest {
         return broker;
     }
 
-    /**
-     * Prints the Cloudlet objects
-     * @param list  list of Cloudlets
-     */
+
     private static void printContainerList(List<Container> list) {
         int size = list.size();
 
         String indent = "    ";
         Log.printLine();
-        Log.printLine("========== OUTPUT ==========");
-        Log.printLine("Container ID" + indent + "VM ID" + indent + "HOST ID" + indent +
-                "Datacenter ID" );
+        Log.printLine("==========CONTAINER INFO OUTPUT ==========");
+        Log.printLine("Size: " + size);
+        Log.printLine("Container ID" + indent  + " StartUpTime" + indent + "DestroyedTime" + indent + "Cost");
 
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
             Container con = list.get(i);
-            Log.printLine( indent + con.getId() + indent + indent  + indent
-                    + con.getVm().getId() + indent + indent + con.getVm().getHost().getId()
-                    + indent + indent + indent  + con.getVm().getHost().getDatacenter().getId());
+            Log.printLine(String.format(indent + con.getId()
+                    + indent + indent + dft.format(con.getStartUpTime())
+                    + indent + indent + dft.format(con.getDestroyedTime())
+                    + indent + indent + dft.format(con.getTotalCost()))
+            );
         }
+        Log.printLine(String.format("=======TOTAL COST=======\nFor container resources is: " + UserSideDatacenter.TotalContainerCost));
 
     }
 
@@ -298,13 +304,13 @@ public class IntervalScaleUpTest {
         Log.printLine();
         Log.printLine("========== OUTPUT ==========");
         Log.printLine("The cloulet size is:" + size);
-        Cloudlet cloudlet;
+        ContainerCloudlet cloudlet;
 
         String indent = "    ";
 
         Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
                 + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
-                + "Start Time" + indent + "Finish Time");
+                + "Start Time" + indent + "Finish Time" + indent + "Delay Factor");
 
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
@@ -312,13 +318,15 @@ public class IntervalScaleUpTest {
             Log.print(indent + cloudlet.getCloudletId() + indent + indent);
             if (cloudlet.getCloudletStatusString() == "Success") {
                 Log.print("SUCCESS");
-                Log.printLine(indent + indent + cloudlet.getResourceId()
+                Log.printLine(String.format(indent + indent + cloudlet.getResourceId()
                         + indent + indent + indent + cloudlet.getVmId()
                         + indent + indent
                         + dft.format(cloudlet.getActualCPUTime()) + indent
                         + indent + dft.format(cloudlet.getExecStartTime())
                         + indent + indent
-                        + dft.format(cloudlet.getFinishTime()));
+                        + dft.format(cloudlet.getFinishTime())
+                        + indent + indent
+                        + dft.format(cloudlet.getDelayFactor())));
             }
         }
     }
