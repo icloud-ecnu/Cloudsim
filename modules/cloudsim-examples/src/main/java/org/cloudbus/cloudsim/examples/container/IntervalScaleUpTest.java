@@ -80,7 +80,7 @@ public class IntervalScaleUpTest {
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
 
             Log.set_log_level(10);
-            Log.setAcrossDatacenterSHOW(true);
+            Log.setAcrossDatacenterSHOW(false);
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
@@ -135,10 +135,10 @@ public class IntervalScaleUpTest {
 //            pre.setVisible(true);
 
             CloudSim.startSimulation();
-            printContainerList(broker.getContainersCreatedList());
+
+            drawContainerLifeCycle(UserSideDatacenter.AllContainers);
 
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
-            drawContainerLifeCycle(UserSideDatacenter.AllContainers);
             printCloudletList(newList);
             CloudSim.stopSimulation();
 
@@ -278,14 +278,21 @@ public class IntervalScaleUpTest {
 
 
     private static void printContainerList(List<Container> list) {
-        int size = list.size();
 
+
+        List<Container> UnRemovedList = broker.getContainersCreatedList();
+        for(int i = 0; i < UnRemovedList.size(); i++){
+            Container con = UnRemovedList.get(i);
+            con.setDestroyedTime(CloudSim.shutdownTime);
+            con.setTotalCost((CloudSim.shutdownTime- con.getStartUpTime()) *  3.0D);
+            list.add(con);
+        }
+        int size = list.size();
         String indent = "    ";
         Log.printLine();
         Log.printLine("==========CONTAINER INFO OUTPUT ==========");
         Log.printLine("Size: " + size);
         Log.printLine("Container ID" + indent  + " StartUpTime" + indent + "DestroyedTime" + indent + "Cost");
-
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
             Container con = list.get(i);
@@ -295,6 +302,9 @@ public class IntervalScaleUpTest {
                     + indent + indent + dft.format(con.getTotalCost()))
             );
         }
+
+
+
         Log.printLine(String.format("=======TOTAL COST=======\nFor container resources is: " + UserSideDatacenter.TotalContainerCost));
 
     }

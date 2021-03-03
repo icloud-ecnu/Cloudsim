@@ -66,7 +66,7 @@ public class CloudSim {
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = 0.01;
 
-
+	public static double shutdownTime = 0;
 	
 	/**
 	 * Initialises all the common attributes.
@@ -561,6 +561,7 @@ public class CloudSim {
 		} else {
 			queue_empty = true;
 			running = false;
+			shutdownTime = CloudSim.clock();
 			printMessage(CloudSim.clock()+": Simulation: No more future events");
 		}
 
