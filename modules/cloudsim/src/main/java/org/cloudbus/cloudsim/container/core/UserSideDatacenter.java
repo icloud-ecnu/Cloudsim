@@ -266,7 +266,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         double delta_y = DatacenterLocation[1] - SourceLocation[1];
         double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
         double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
-        return 0.5 * DelayNormalization + 0.5 * CpuUtilization;
+        return 0 * DelayNormalization + 1 * CpuUtilization;
     }
 
     public double getDelayFactorToUser(){
@@ -278,7 +278,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         double delta_y = DatacenterLocation[1] - 0.0;
         double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
         double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
-        return 0.5 * DelayNormalization + 0.5 * CpuUtilization;
+        return 0 * DelayNormalization + 1 * CpuUtilization;
     }
 
 

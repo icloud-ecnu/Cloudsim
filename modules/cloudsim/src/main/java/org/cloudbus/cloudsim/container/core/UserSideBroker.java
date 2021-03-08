@@ -196,20 +196,36 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 
     public boolean ProcessBindingBeforeSubmit(ContainerCloudlet cl){
 //        Log.formatLine(4, "Cloudlet id: " + cl.getCloudletId() + " Destination Datacenter Id: " + DestDatacenterId);
-        int destDatacenterId = getDatacenterIdsList().get(0);
+        int destDatacenterId = CurrentOptimalDatacenterId;
         boolean binding = false;
         for(Container container : getContainersCreatedList()){
-            if (container.getAvailablePesNum() >= cl.getNumberOfPes()) {
+            int conId = container.getVm().getHost().getDatacenter().getId();
+            if (container.getAvailablePesNum() >= cl.getNumberOfPes() && conId == destDatacenterId) {
                 binding = true;
                 cl.setContainerId(container.getId());
-                Log.formatLine(4, "chris note: Container id: " + container.getId() + " has "
+                Log.formatLine(4, "Optimal choice: Container id: " + container.getId() + " has "
                         +  container.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
                         + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + container.getId());
                 cl.setVmId(container.getVm().getId());
-                destDatacenterId = container.getVm().getHost().getDatacenter().getId();
                 //subtract the available PEs number.
                 container.setAvailablePesNum(container.getAvailablePesNum() - cl.getNumberOfPes());
                 break;
+            }
+        }
+        if(!binding){
+            for(Container container : getContainersCreatedList()){
+                if (container.getAvailablePesNum() >= cl.getNumberOfPes()) {
+                    binding = true;
+                    cl.setContainerId(container.getId());
+                    cl.setVmId(container.getVm().getId());
+                    destDatacenterId = container.getVm().getHost().getDatacenter().getId();
+                    Log.formatLine(4, "Non-optimal choice: Container id: " + container.getId() + " has "
+                            +  container.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
+                            + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + container.getId());
+                    //subtract the available PEs number.
+                    container.setAvailablePesNum(container.getAvailablePesNum() - cl.getNumberOfPes());
+                    break;
+                }
             }
         }
         if(binding){
