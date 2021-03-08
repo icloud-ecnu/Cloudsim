@@ -126,7 +126,7 @@ public class IntervalScaleUpTest {
             broker.submitVmList(vmlist);
             broker.submitContainerList(containerlist);
 
-
+            Draw ex = new Draw();
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
@@ -134,6 +134,7 @@ public class IntervalScaleUpTest {
                 cl.setUserId(brokerId);
                 Log.formatLine(4, "cloudlet id: " + cl.getCloudletId() + " length is " + cl.getCloudletLength());
             }
+            ex.setInputDataPanel(self_design_distribution);
             broker.submitCloudletList(cloudletList);
 //            Draw pre = new Draw(cloudletList, 12000, 1200, 100, 100);
 //            pre.setVisible(true);
@@ -147,7 +148,7 @@ public class IntervalScaleUpTest {
             CloudSim.stopSimulation();
 
             Log.printLine("Interval Scale Up Test finished!");
-
+            ex.setResultPanel(newList);
             // visualize the raw data
             EventQueue.invokeLater(() -> {
                 //change the default font
@@ -160,7 +161,6 @@ public class IntervalScaleUpTest {
                         UIManager.put(key, font);
                     }
                 }
-                Draw ex = new Draw(cloudletList, terminated_time, interval_length, Gaussian_mean, Gaussian_var, newList);
                 ex.setVisible(true);
             });
         }

@@ -15,8 +15,12 @@ import java.util.Random;
 
 public class BaseRequestDistribution {
 
-//    private int interval_length;
-//    private int terminated_time;
+    private int interval_length;
+    private int terminated_time;
+    private int Poisson_lambda;
+    private double Gaussian_mean;
+    private double Gaussian_var;
+
     private List<ContainerCloudlet> required_workloads;
 
 
@@ -37,7 +41,11 @@ public class BaseRequestDistribution {
 
     public BaseRequestDistribution(int terminated_time, int interval_length, int Poisson_lambda, double Gaussian_mean, double Gaussian_var) throws IOException {
        // SetIntervalLength(interval_length);
-       // this.terminated_time = terminated_time;
+        this.terminated_time = terminated_time;
+        this.interval_length = interval_length;
+        this.Poisson_lambda = Poisson_lambda;
+        this.Gaussian_mean = Gaussian_mean;
+        this.Gaussian_var = Gaussian_var;
         PoissonDistribution RequestNum_distribution = new PoissonDistribution(Poisson_lambda);
         required_workloads = new ArrayList<ContainerCloudlet>();
         int CloudletID = 0;
@@ -76,7 +84,20 @@ public class BaseRequestDistribution {
         return required_workloads;
     }
 
-
-
+    public int GetTerminatedTime(){
+        return this.terminated_time;
+    }
+    public int GetIntervalLength(){
+        return this.interval_length;
+    }
+    public int GetPoissonLambda(){
+        return this.Poisson_lambda;
+    }
+    public double GetGaussianMean(){
+        return this.Gaussian_mean;
+    }
+    public double GetGaussianVar(){
+        return this.Gaussian_var;
+    }
 
 }

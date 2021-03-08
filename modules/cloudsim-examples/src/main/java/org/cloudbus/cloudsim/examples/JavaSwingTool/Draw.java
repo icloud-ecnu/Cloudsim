@@ -42,23 +42,12 @@ import javax.swing.border.EmptyBorder;
 
 
 public class Draw extends JFrame{
-    private final List<ContainerCloudlet> cloudletList;
-    private final List<ContainerCloudlet> resultCloudletList;
-    private final int terminated_time;
-    private final int interval_length;
-    private final int gaussian_mean;
-    private final int gaussian_var;
+    private JTabbedPane tabPane;
 
-    public Draw(List<ContainerCloudlet> cloudletList, int terminated_time, int interval_length, int gaussian_mean, int gaussian_var, List<ContainerCloudlet> resultCloudletList) {
-        this.cloudletList = cloudletList;
-        this.resultCloudletList = resultCloudletList;
-        this.terminated_time = terminated_time;
-        this.interval_length = interval_length;
-        this.gaussian_mean = gaussian_mean;
-        this.gaussian_var = gaussian_var;
-        JTabbedPane panel = createTabPanel();
-        panel.setPreferredSize(new Dimension(1200, 900));
-        setContentPane(panel);
+    public Draw() {
+        this.tabPane = createTabPanel();
+        this.tabPane.setPreferredSize(new Dimension(1200, 900));
+        setContentPane(this.tabPane);
         pack();
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -71,16 +60,11 @@ public class Draw extends JFrame{
     public JTabbedPane createTabPanel() {
         // crate the tab panel
         final JTabbedPane tabbedPane = new JTabbedPane();
-        // crate the input panel
-        CustomPanel panel1 = createInputDataPanel();
-        CustomPanel panel2 = createResultPanel();
 
-        // create the first tab(set tab name and content)
-        tabbedPane.addTab("Input Data", panel1);
-
+        // crate the first tab
+        tabbedPane.addTab("Input Data", new JPanel(new GridLayout(1, 1)));
         // crate the second tab
-        tabbedPane.addTab("Result", panel2);
-
+        tabbedPane.addTab("Result", new JPanel(new GridLayout(1, 1)));
 
         // add listener
         tabbedPane.addChangeListener(new ChangeListener() {
@@ -95,14 +79,24 @@ public class Draw extends JFrame{
         return tabbedPane;
     }
 
+    public void setInputDataPanel(BaseRequestDistribution distributionData) {
+        CustomPanel panel = createInputDataPanel(distributionData);
+        this.tabPane.setComponentAt(0, panel);
+    }
+
+    public void setResultPanel(List<ContainerCloudlet> resultCloudletList) {
+        CustomPanel panel = createResultPanel(resultCloudletList);
+        this.tabPane.setComponentAt(1, panel);
+    }
+
     /**
      * Create the result panel.
      */
-    public CustomPanel createResultPanel() {
+    public CustomPanel createResultPanel(List<ContainerCloudlet> resultCloudletList) {
         CustomPanel panel = new CustomPanel(new GridLayout(2, 1));
         CustomPanel field1 = new CustomPanel(new GridLayout(1, 2));
-        JFreeChart chart1 = createDelayChartOfCDF();
-        JFreeChart chart2 = createDelayChartOfDistribution();
+        JFreeChart chart1 = createDelayChartOfCDF(resultCloudletList);
+        JFreeChart chart2 = createDelayChartOfDistribution(resultCloudletList);
 
         field1.add((Component)new ChartPanel(chart1, false));
         field1.add((Component)new ChartPanel(chart2, false));
@@ -110,12 +104,12 @@ public class Draw extends JFrame{
 
         panel.add(field1);
 
-        JScrollPane field2 = creatResultTable();
+        JScrollPane field2 = createResultTable(resultCloudletList);
         panel.add(field2);
         return panel;
     }
 
-    private JScrollPane creatResultTable() {
+    private JScrollPane createResultTable(List<ContainerCloudlet> resultCloudletList) {
         int length = resultCloudletList.size();
         double max_value = 0, min_value = 1000, total_value = 0;
         double[] dataArr = new double[length];
@@ -136,7 +130,7 @@ public class Draw extends JFrame{
         return new JScrollPane(table);
     }
 
-    private JFreeChart createDelayChartOfDistribution() {
+    private JFreeChart createDelayChartOfDistribution(List<ContainerCloudlet> resultCloudletList) {
         int length = resultCloudletList.size();
         double max_value = 0, min_value = 1000;
         double[] dataArr = new double[length];
@@ -172,7 +166,7 @@ public class Draw extends JFrame{
         return chart;
     }
 
-    private JFreeChart createDelayChartOfCDF() {
+    private JFreeChart createDelayChartOfCDF(List<ContainerCloudlet> resultCloudletList) {
         int length = resultCloudletList.size();
         XYSeriesCollection dataset = new XYSeriesCollection();
         XYSeries series = new XYSeries("Delay Factor");
@@ -217,7 +211,6 @@ public class Draw extends JFrame{
         renderer.setDefaultShapesVisible(true);
         renderer.setDefaultShapesFilled(true);
 
-
 //        XYSplineRenderer renderer1 = new XYSplineRenderer();
 //        plot.setRenderer((XYItemRenderer)renderer1);
 //        plot.setBackgroundPaint(Color.LIGHT_GRAY);
@@ -235,22 +228,25 @@ public class Draw extends JFrame{
     /**
      * Create the input panel.
      */
-    public CustomPanel createInputDataPanel() {
+    public CustomPanel createInputDataPanel(BaseRequestDistribution distributionData) {
+        int terminated_time = distributionData.GetTerminatedTime();
+        int interval_length = distributionData.GetIntervalLength();
+
         CustomPanel panel = new CustomPanel(new GridLayout(3, 1));
 
-        JFreeChart chart1 = createRequestNumberChartOfAll();
+        JFreeChart chart1 = createRequestNumberChartOfAll(distributionData);
 
 
-        JFreeChart chart2 = createRequestTimeChartOfAll();
+        JFreeChart chart2 = createRequestTimeChartOfAll(distributionData);
 
-        JFreeChart chart3 = createRequestTimeChartOfSingle();
+        JFreeChart chart3 = createRequestTimeChartOfSingle(distributionData);
 
         JLabel label=new JLabel("Select an interval to present the detail info of it: ");
         DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<String>();
         JComboBox<String> comboBox = new JComboBox<String>(comboModel);
-        for(int i = 0; i < this.terminated_time; i += this.interval_length){
+        for(int i = 0; i < terminated_time; i += interval_length){
             String from = timeNumberToString(i);
-            String end = timeNumberToString(i + this.interval_length);
+            String end = timeNumberToString(i + interval_length);
             String IntervalString;
             comboBox.addItem(from + " --> " + end);
         }
@@ -264,7 +260,7 @@ public class Draw extends JFrame{
                     int index = comboBox.getSelectedIndex();
                     chart3.setTitle(String.format("Request time's Distribution (%s~%s)", timeNumberToString(index * interval_length), timeNumberToString((index + 1) * interval_length)));
                     XYPlot plot3 = (XYPlot)chart3.getPlot();
-                    plot3.setDataset(getRequestTimeDataset(index * interval_length, (index + 1) * interval_length));
+                    plot3.setDataset(getRequestTimeDataset(distributionData,index * interval_length, (index + 1) * interval_length));
                 }
             }
         });
@@ -288,7 +284,10 @@ public class Draw extends JFrame{
         return panel;
     }
 
-    private JFreeChart createRequestNumberChartOfAll() {
+    private JFreeChart createRequestNumberChartOfAll(BaseRequestDistribution distributionData) {
+        List<ContainerCloudlet> cloudletList = distributionData.GetWorkloads();
+        int terminated_time = distributionData.GetTerminatedTime();
+        int interval_length = distributionData.GetIntervalLength();
         int interval_nums = terminated_time / interval_length + 1;
         int[] requestNumbers = new int[interval_nums];
         XYSeriesCollection dataset = new XYSeriesCollection();
@@ -332,7 +331,7 @@ public class Draw extends JFrame{
         XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
         renderer.setDefaultShapesVisible(true);
         renderer.setDefaultShapesFilled(true);
-        renderer.setDefaultToolTipGenerator(new TimeToolTipGenerator(interval_length/2));
+        renderer.setDefaultToolTipGenerator(new TimeToolTipGenerator(interval_length, interval_length/2));
 
         NumberAxis xAxis = (NumberAxis)plot.getDomainAxis();
         xAxis.setLowerBound(0);
@@ -365,9 +364,9 @@ public class Draw extends JFrame{
     }
 
 
-    private JFreeChart createRequestTimeChartOfAll() {
-
-        HistogramDataset dataset = getRequestTimeDataset(0, terminated_time);
+    private JFreeChart createRequestTimeChartOfAll(BaseRequestDistribution distributionData) {
+        int terminated_time = distributionData.GetTerminatedTime();
+        HistogramDataset dataset = getRequestTimeDataset(distributionData,0, terminated_time);
         JFreeChart chart = ChartFactory.createHistogram(
                 "Request time's Distribution (ALl Interval)",
                 "Request Time (min)",
@@ -392,8 +391,9 @@ public class Draw extends JFrame{
         return chart;
     }
 
-    private JFreeChart createRequestTimeChartOfSingle() {
-        HistogramDataset dataset = getRequestTimeDataset(0, interval_length - 1);
+    private JFreeChart createRequestTimeChartOfSingle(BaseRequestDistribution distributionData) {
+        int interval_length = distributionData.GetIntervalLength();
+        HistogramDataset dataset = getRequestTimeDataset(distributionData,0, interval_length - 1);
         JFreeChart chart = ChartFactory.createHistogram(
                 String.format("Request time's Distribution (%s~%s)", timeNumberToString(0), timeNumberToString(interval_length)),
                 "Request Time (min)",
@@ -419,8 +419,9 @@ public class Draw extends JFrame{
     }
 
 
-    private HistogramDataset getRequestTimeDataset(double low, double up) {
+    private HistogramDataset getRequestTimeDataset(BaseRequestDistribution distributionData, double low, double up) {
         // createDataset
+        List<ContainerCloudlet> cloudletList = distributionData.GetWorkloads();
         int length = 0, index = 0;
         for (ContainerCloudlet containerCloudlet : cloudletList) {
             double currentValue = containerCloudlet.getExecStartTime();
@@ -438,16 +439,19 @@ public class Draw extends JFrame{
                 index++;
             }
         }
-
+        double gaussian_mean = distributionData.GetGaussianMean();
+        double gaussian_var = distributionData.GetGaussianVar();
         HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("(Request Length, Request Number) ", data, gaussian_var / 5, (double)(gaussian_mean - gaussian_var/2) / total_mips, (double) (gaussian_mean + gaussian_var/2) / total_mips);
+        dataset.addSeries("(Request Length, Request Number) ", data, (int)(gaussian_var / 5), (double)(gaussian_mean - gaussian_var/2) / total_mips, (double) (gaussian_mean + gaussian_var/2) / total_mips);
         return dataset;
     }
 
     private class TimeToolTipGenerator implements XYToolTipGenerator {
-        private int offset;
-        public TimeToolTipGenerator(int offset) {
+        private final int offset;
+        private  final int interval_length;
+        public TimeToolTipGenerator(int interval_length, int offset) {
             this.offset = offset;
+            this.interval_length = interval_length;
         }
         @Override
         public String generateToolTip(XYDataset xyDataset, int i, int i1) {
@@ -519,7 +523,9 @@ public class Draw extends JFrame{
                         UIManager.put(key, font);
                     }
                 }
-                Draw ex = new Draw(cloudletList_test, terminated_time_test, interval_length_test, gaussian_mean_test, gaussian_var_test, cloudletList_test);
+                Draw ex = new Draw();
+                ex.setInputDataPanel(self_design_distribution);
+                ex.setResultPanel(cloudletList_test);
                 ex.setVisible(true);
             });
         } catch (Exception e) {
