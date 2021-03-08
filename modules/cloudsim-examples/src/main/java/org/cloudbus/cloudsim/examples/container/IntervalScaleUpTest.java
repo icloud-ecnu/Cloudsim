@@ -10,6 +10,7 @@ import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmPe;
 import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmPeProvisionerSimple;
 import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmRamProvisionerSimple;
 import org.cloudbus.cloudsim.container.core.*;
+import org.cloudbus.cloudsim.container.core.Container;
 import org.cloudbus.cloudsim.container.hostSelectionPolicies.HostSelectionPolicy;
 import org.cloudbus.cloudsim.container.hostSelectionPolicies.HostSelectionPolicyFirstFit;
 import org.cloudbus.cloudsim.container.resourceAllocatorMigrationEnabled.PowerContainerVmAllocationPolicyMigrationAbstractHostSelection;
@@ -26,8 +27,11 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
 import org.cloudbus.cloudsim.examples.JavaSwingTool.Draw;
 
+import javax.swing.*;
+import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.List;
 
 public class IntervalScaleUpTest {
 
@@ -143,6 +147,22 @@ public class IntervalScaleUpTest {
             CloudSim.stopSimulation();
 
             Log.printLine("Interval Scale Up Test finished!");
+
+            // visualize the raw data
+            EventQueue.invokeLater(() -> {
+                //change the default font
+                Font font = new Font("Arial", Font.PLAIN, 13);
+                java.util.Enumeration keys = UIManager.getDefaults().keys();
+                while (keys.hasMoreElements()) {
+                    Object key = keys.nextElement();
+                    Object value = UIManager.get(key);
+                    if (value instanceof javax.swing.plaf.FontUIResource) {
+                        UIManager.put(key, font);
+                    }
+                }
+                Draw ex = new Draw(cloudletList, terminated_time, interval_length, Gaussian_mean, Gaussian_var, newList);
+                ex.setVisible(true);
+            });
         }
         catch (Exception e) {
             e.printStackTrace();

@@ -6,6 +6,7 @@ import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDis
 import org.cloudbus.cloudsim.examples.container.ConstantsExamples;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtils;
 import org.jfree.chart.JFreeChart;
 
 import org.jfree.chart.axis.*;
@@ -30,6 +31,7 @@ import java.awt.event.ItemListener;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jfree.chart.plot.XYPlot;
@@ -41,13 +43,15 @@ import javax.swing.border.EmptyBorder;
 
 public class Draw extends JFrame{
     private final List<ContainerCloudlet> cloudletList;
+    private final List<ContainerCloudlet> resultCloudletList;
     private final int terminated_time;
     private final int interval_length;
     private final int gaussian_mean;
     private final int gaussian_var;
 
-    public Draw(List<ContainerCloudlet> cloudletList, int terminated_time, int interval_length, int gaussian_mean, int gaussian_var) {
+    public Draw(List<ContainerCloudlet> cloudletList, int terminated_time, int interval_length, int gaussian_mean, int gaussian_var, List<ContainerCloudlet> resultCloudletList) {
         this.cloudletList = cloudletList;
+        this.resultCloudletList = resultCloudletList;
         this.terminated_time = terminated_time;
         this.interval_length = interval_length;
         this.gaussian_mean = gaussian_mean;
@@ -69,12 +73,13 @@ public class Draw extends JFrame{
         final JTabbedPane tabbedPane = new JTabbedPane();
         // crate the input panel
         CustomPanel panel1 = createInputDataPanel();
+        CustomPanel panel2 = createResultPanel();
 
         // create the first tab(set tab name and content)
         tabbedPane.addTab("Input Data", panel1);
 
         // crate the second tab
-        tabbedPane.addTab("Result", new ImageIcon("bb.jpg"), new JPanel(new GridLayout(1, 1)));
+        tabbedPane.addTab("Result", panel2);
 
 
         // add listener
@@ -91,21 +96,140 @@ public class Draw extends JFrame{
     }
 
     /**
-     * create a drop down list to present the detail info of one specific interval.
+     * Create the result panel.
      */
-    public JFrame createDropdownList(){
-        JFrame basis = new JFrame();
-        basis.setTitle("Interval Selection");
-        basis.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        basis.setBounds(10,10,400,300);
-        JPanel contentPane=new JPanel();
-        contentPane.setBorder(new EmptyBorder(5,5,5,5));
-        basis.setContentPane(contentPane);
-        contentPane.setLayout(new FlowLayout(FlowLayout.CENTER,5,5));
+    public CustomPanel createResultPanel() {
+        CustomPanel panel = new CustomPanel(new GridLayout(2, 1));
+        CustomPanel field1 = new CustomPanel(new GridLayout(1, 2));
+        JFreeChart chart1 = createDelayChartOfCDF();
+        JFreeChart chart2 = createDelayChartOfDistribution();
 
-        // contentPane.add(comboBox);
-        basis.setVisible(true);
-        return basis;
+        field1.add((Component)new ChartPanel(chart1, false));
+        field1.add((Component)new ChartPanel(chart2, false));
+
+
+        panel.add(field1);
+
+        JScrollPane field2 = creatResultTable();
+        panel.add(field2);
+        return panel;
+    }
+
+    private JScrollPane creatResultTable() {
+        int length = resultCloudletList.size();
+        double max_value = 0, min_value = 1000, total_value = 0;
+        double[] dataArr = new double[length];
+        for (int i=0;i<resultCloudletList.size();i++) {
+            double current_value = resultCloudletList.get(i).getDelayFactor();
+            dataArr[i] = current_value;
+            max_value = Math.max(max_value, current_value);
+            min_value = Math.min(min_value, current_value);
+            total_value += current_value;
+        }
+        //定义二维数组作为表格数据
+        Object[][] tableData = {
+                new Object[]{"Delay Factor" , min_value , max_value, total_value / length},
+        };
+        //定义一维数据作为列标题
+        Object[] columnTitle = {"" , "Min" , "Max", "Avg"};
+        JTable table = new JTable(tableData , columnTitle);
+        return new JScrollPane(table);
+    }
+
+    private JFreeChart createDelayChartOfDistribution() {
+        int length = resultCloudletList.size();
+        double max_value = 0, min_value = 1000;
+        double[] dataArr = new double[length];
+        for (int i=0;i<resultCloudletList.size();i++) {
+            double current_value = resultCloudletList.get(i).getDelayFactor();
+            dataArr[i] = current_value;
+            max_value = Math.max(max_value, current_value);
+            min_value = Math.min(min_value, current_value);
+        }
+        HistogramDataset dataset = new HistogramDataset();
+        dataset.addSeries("", dataArr, 20, min_value * 0.99, max_value * 1.01);
+        JFreeChart chart = ChartFactory.createHistogram(
+                "Delay Distribution",
+                "Delay Factor",
+                "Number",
+                dataset, PlotOrientation.VERTICAL,
+                false,
+                true,
+                false
+        );
+        chart = DecorateChart(chart);
+        XYPlot plot = (XYPlot)chart.getPlot();
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        plot.setForegroundAlpha(0.85F);
+        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
+        yAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+        XYBarRenderer renderer = (XYBarRenderer)plot.getRenderer();
+        renderer.setDrawBarOutline(false);
+        renderer.setBarPainter((XYBarPainter)new StandardXYBarPainter());
+        renderer.setShadowVisible(false);
+        // renderer.setDefaultToolTipGenerator(new MyXYToolTipGenerator());
+        return chart;
+    }
+
+    private JFreeChart createDelayChartOfCDF() {
+        int length = resultCloudletList.size();
+        XYSeriesCollection dataset = new XYSeriesCollection();
+        XYSeries series = new XYSeries("Delay Factor");
+        // createDataset
+        double[] dataArr = new double[length];
+        for (int i=0;i<resultCloudletList.size();i++) {
+            double current_value = resultCloudletList.get(i).getDelayFactor();
+            dataArr[i] = current_value;
+        }
+        Arrays.sort(dataArr);
+        int pos = 0;
+        series.add(dataArr[pos]*0.99, 0);
+        while(pos < length) {
+            double current = dataArr[pos];
+            while(pos < length && current == dataArr[pos]) {
+                pos++;
+            }
+            Log.printLine(current + " " + pos);
+            series.add(current, (double) pos / length);
+        }
+
+        dataset.addSeries(series);
+
+        JFreeChart chart = ChartFactory.createXYLineChart(
+                "Delay Distribution",
+                "Delay Factor",
+                "CDF",
+                dataset,
+                PlotOrientation.VERTICAL,
+                false,
+                true,
+                false
+        );
+        chart = DecorateChart(chart);
+        XYPlot plot = (XYPlot)chart.getPlot();
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        plot.setForegroundAlpha(0.85F);
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
+        renderer.setDefaultShapesVisible(true);
+        renderer.setDefaultShapesFilled(true);
+
+
+//        XYSplineRenderer renderer1 = new XYSplineRenderer();
+//        plot.setRenderer((XYItemRenderer)renderer1);
+//        plot.setBackgroundPaint(Color.LIGHT_GRAY);
+//        plot.setDomainGridlinePaint(Color.WHITE);
+//        plot.setRangeGridlinePaint(Color.WHITE);
+//        NumberAxis xAxis = (NumberAxis)plot.getDomainAxis();
+//        xAxis.setAutoRangeIncludesZero(false);
+//        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
+//        yAxis.setAutoRangeIncludesZero(false);
+        ChartUtils.applyCurrentTheme(chart);
+
+        return chart;
     }
 
     /**
@@ -395,7 +519,7 @@ public class Draw extends JFrame{
                         UIManager.put(key, font);
                     }
                 }
-                Draw ex = new Draw(cloudletList_test, terminated_time_test, interval_length_test, gaussian_mean_test, gaussian_var_test);
+                Draw ex = new Draw(cloudletList_test, terminated_time_test, interval_length_test, gaussian_mean_test, gaussian_var_test, cloudletList_test);
                 ex.setVisible(true);
             });
         } catch (Exception e) {
