@@ -31,6 +31,7 @@ import java.awt.event.ItemListener;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,7 +43,18 @@ import javax.swing.border.EmptyBorder;
 
 
 public class Draw extends JFrame{
-    private JTabbedPane tabPane;
+    private JTabbedPane tabPane ;
+
+    private static class CloudletData {
+        public double StartTime;
+        public long RequestLength;
+        public double DelayFactor;
+        CloudletData(ContainerCloudlet containerCloudlet) {
+            this.StartTime = containerCloudlet.getExecStartTime();
+            this.DelayFactor = containerCloudlet.getDelayFactor();
+            this.RequestLength = containerCloudlet.getCloudletLength();
+        }
+    }
 
     public Draw() {
         this.tabPane = createTabPanel();
@@ -211,15 +223,6 @@ public class Draw extends JFrame{
         renderer.setDefaultShapesVisible(true);
         renderer.setDefaultShapesFilled(true);
 
-//        XYSplineRenderer renderer1 = new XYSplineRenderer();
-//        plot.setRenderer((XYItemRenderer)renderer1);
-//        plot.setBackgroundPaint(Color.LIGHT_GRAY);
-//        plot.setDomainGridlinePaint(Color.WHITE);
-//        plot.setRangeGridlinePaint(Color.WHITE);
-//        NumberAxis xAxis = (NumberAxis)plot.getDomainAxis();
-//        xAxis.setAutoRangeIncludesZero(false);
-//        NumberAxis yAxis = (NumberAxis)plot.getRangeAxis();
-//        yAxis.setAutoRangeIncludesZero(false);
         ChartUtils.applyCurrentTheme(chart);
 
         return chart;
@@ -231,15 +234,23 @@ public class Draw extends JFrame{
     public CustomPanel createInputDataPanel(BaseRequestDistribution distributionData) {
         int terminated_time = distributionData.GetTerminatedTime();
         int interval_length = distributionData.GetIntervalLength();
+        double gaussian_mean = distributionData.GetGaussianMean();
+        double gaussian_var = distributionData.GetGaussianVar();
+
+        List<CloudletData> inputData = new ArrayList<>();
+        List<ContainerCloudlet> cloudletList = distributionData.GetWorkloads();
+        for(ContainerCloudlet cl : cloudletList){
+            inputData.add(new CloudletData(cl));
+        }
 
         CustomPanel panel = new CustomPanel(new GridLayout(3, 1));
 
-        JFreeChart chart1 = createRequestNumberChartOfAll(distributionData);
+        JFreeChart chart1 = createRequestNumberChartOfAll(inputData, terminated_time, interval_length);
 
 
-        JFreeChart chart2 = createRequestTimeChartOfAll(distributionData);
+        JFreeChart chart2 = createRequestTimeChartOfAll(inputData, gaussian_mean, gaussian_var, terminated_time);
 
-        JFreeChart chart3 = createRequestTimeChartOfSingle(distributionData);
+        JFreeChart chart3 = createRequestTimeChartOfSingle(inputData, gaussian_mean, gaussian_var,interval_length);
 
         JLabel label=new JLabel("Select an interval to present the detail info of it: ");
         DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<String>();
@@ -260,7 +271,7 @@ public class Draw extends JFrame{
                     int index = comboBox.getSelectedIndex();
                     chart3.setTitle(String.format("Request time's Distribution (%s~%s)", timeNumberToString(index * interval_length), timeNumberToString((index + 1) * interval_length)));
                     XYPlot plot3 = (XYPlot)chart3.getPlot();
-                    plot3.setDataset(getRequestTimeDataset(distributionData,index * interval_length, (index + 1) * interval_length));
+                    plot3.setDataset(getRequestTimeDataset(inputData,gaussian_mean,gaussian_var,index * interval_length, (index + 1) * interval_length));
                 }
             }
         });
@@ -284,19 +295,16 @@ public class Draw extends JFrame{
         return panel;
     }
 
-    private JFreeChart createRequestNumberChartOfAll(BaseRequestDistribution distributionData) {
-        List<ContainerCloudlet> cloudletList = distributionData.GetWorkloads();
-        int terminated_time = distributionData.GetTerminatedTime();
-        int interval_length = distributionData.GetIntervalLength();
+    private JFreeChart createRequestNumberChartOfAll(List<CloudletData> inputData, int terminated_time, int interval_length) {
         int interval_nums = terminated_time / interval_length + 1;
         int[] requestNumbers = new int[interval_nums];
         XYSeriesCollection dataset = new XYSeriesCollection();
         XYSeries series = new XYSeries("");
         // createDataset
-        double[] startTimes = new double[cloudletList.size()];
-        for (ContainerCloudlet containerCloudlet : cloudletList) {
+        double[] startTimes = new double[inputData.size()];
+        for (CloudletData item : inputData) {
             // startTimes[i] = cloudletList.get(i).getExecStartTime();
-            requestNumbers[(int) containerCloudlet.getExecStartTime() / interval_length]++;
+            requestNumbers[(int) item.StartTime / interval_length]++;
         }
 
         int max_num = -1, min_num = 100000;
@@ -364,9 +372,8 @@ public class Draw extends JFrame{
     }
 
 
-    private JFreeChart createRequestTimeChartOfAll(BaseRequestDistribution distributionData) {
-        int terminated_time = distributionData.GetTerminatedTime();
-        HistogramDataset dataset = getRequestTimeDataset(distributionData,0, terminated_time);
+    private JFreeChart createRequestTimeChartOfAll(List<CloudletData> inputData,double gaussian_mean, double gaussian_var, int terminated_time) {
+        HistogramDataset dataset = getRequestTimeDataset(inputData,gaussian_mean,gaussian_var,0, terminated_time);
         JFreeChart chart = ChartFactory.createHistogram(
                 "Request time's Distribution (ALl Interval)",
                 "Request Time (min)",
@@ -391,9 +398,8 @@ public class Draw extends JFrame{
         return chart;
     }
 
-    private JFreeChart createRequestTimeChartOfSingle(BaseRequestDistribution distributionData) {
-        int interval_length = distributionData.GetIntervalLength();
-        HistogramDataset dataset = getRequestTimeDataset(distributionData,0, interval_length - 1);
+    private JFreeChart createRequestTimeChartOfSingle(List<CloudletData> inputData,double gaussian_mean, double gaussian_var, int interval_length) {
+        HistogramDataset dataset = getRequestTimeDataset(inputData,gaussian_mean,gaussian_var,0, interval_length - 1);
         JFreeChart chart = ChartFactory.createHistogram(
                 String.format("Request time's Distribution (%s~%s)", timeNumberToString(0), timeNumberToString(interval_length)),
                 "Request Time (min)",
@@ -419,12 +425,11 @@ public class Draw extends JFrame{
     }
 
 
-    private HistogramDataset getRequestTimeDataset(BaseRequestDistribution distributionData, double low, double up) {
+    private HistogramDataset getRequestTimeDataset(List<CloudletData> inputData,double gaussian_mean, double gaussian_var, double low, double up) {
         // createDataset
-        List<ContainerCloudlet> cloudletList = distributionData.GetWorkloads();
         int length = 0, index = 0;
-        for (ContainerCloudlet containerCloudlet : cloudletList) {
-            double currentValue = containerCloudlet.getExecStartTime();
+        for (CloudletData item : inputData) {
+            double currentValue = item.StartTime;
             if(currentValue >= low && currentValue < up) {
                 length++;
             }
@@ -432,15 +437,13 @@ public class Draw extends JFrame{
         double[] data = new double[length];
         int MIPS = 10;
         int total_mips = MIPS * ConstantsExamples.CLOUDLET_PES;
-        for (ContainerCloudlet containerCloudlet : cloudletList) {
-            double currentValue = containerCloudlet.getExecStartTime();
+        for (CloudletData item : inputData) {
+            double currentValue = item.StartTime;
             if(currentValue >= low && currentValue < up) {
-                data[index] = (double) containerCloudlet.getCloudletLength() / total_mips;
+                data[index] = (double) item.RequestLength / total_mips;
                 index++;
             }
         }
-        double gaussian_mean = distributionData.GetGaussianMean();
-        double gaussian_var = distributionData.GetGaussianVar();
         HistogramDataset dataset = new HistogramDataset();
         dataset.addSeries("(Request Length, Request Number) ", data, (int)(gaussian_var / 5), (double)(gaussian_mean - gaussian_var/2) / total_mips, (double) (gaussian_mean + gaussian_var/2) / total_mips);
         return dataset;
