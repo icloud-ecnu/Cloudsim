@@ -288,7 +288,6 @@ public class ContainerDatacenter extends SimEntity {
         List<Container> containerList = (List<Container>) ev.getData();
 
         for (Container container : containerList) {
-
             boolean result = getContainerAllocationPolicy().allocateVmForContainer(container, getContainerVmList());
             if (ack) {
                 int[] data = new int[3];

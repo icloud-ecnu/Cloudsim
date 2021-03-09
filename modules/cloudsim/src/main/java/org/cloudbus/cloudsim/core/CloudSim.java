@@ -67,7 +67,13 @@ public class CloudSim {
 	private static double minTimeBetweenEvents = 0.01;
 
 	public static double shutdownTime = 0;
-	
+
+	public static int LinearScaleUpNum = 30;
+
+	public static double LoadBalanceWeight = 0.3;
+
+	public static double TransmissionWeight = 0.7;
+
 	/**
 	 * Initialises all the common attributes.
 	 * 

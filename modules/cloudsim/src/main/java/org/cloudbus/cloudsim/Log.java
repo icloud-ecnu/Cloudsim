@@ -10,6 +10,7 @@ package org.cloudbus.cloudsim;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 /**
  * Logger used for performing logging of the simulation process. It provides the ability to
@@ -21,6 +22,66 @@ import java.io.OutputStream;
  * {@link String#format(java.lang.String, java.lang.Object...)} method.
  */
 public class Log {
+
+	public static enum Opr{
+		Base, ScaleUp, ScaleDown, Synchronization, InterDatacenterAllocation, InnerDatacenterAllocation;
+	}
+
+	public static ArrayList<Opr>stdout = new ArrayList<Opr>();
+
+	public static void SetLogStdOut(Opr op){
+		stdout.add(op);
+	}
+
+	public static boolean CheckInStdOut(Opr op){
+		for(Opr x : stdout){
+			if(x == op)
+				return true;
+		}
+		return false;
+	}
+
+	public static void formatLine(Opr op, String format,  Object... args) {
+		if (!isDisabled() && CheckInStdOut(op)) {
+			printLine(String.format(format, args));
+		}
+	}
+
+
+	public static void formatLine(int LogLevel, String format, Object... args) {
+		if (!isDisabled() && LogLevel >= log_level) {
+			printLine(String.format(format, args));
+		}
+	}
+
+
+	public static void formatLine(String format, Object... args) {
+		if (!isDisabled() && log_level == 0) {
+			printLine(String.format(format, args));
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/** The Constant LINE_SEPARATOR. */
 	private static final String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -161,17 +222,8 @@ public class Log {
 	 * @param format the format
 	 * @param args the args
 	 */
-	public static void formatLine(String format, Object... args) {
-		if (!isDisabled() && log_level == 0) {
-			printLine(String.format(format, args));
-		}
-	}
 
-	public static void formatLine(int LogLevel, String format, Object... args) {
-		if (!isDisabled() && LogLevel >= log_level) {
-			printLine(String.format(format, args));
-		}
-	}
+
 
 	/**
 	 * Sets the output stream.

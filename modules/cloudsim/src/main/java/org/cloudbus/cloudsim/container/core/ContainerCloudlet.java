@@ -11,6 +11,14 @@ import java.util.List;
 public class ContainerCloudlet extends Cloudlet {
     public int containerId = -1;
     private double DelayFactor = -1;
+    private int hostId = -1;
+
+    public void setHostId(int id){
+        hostId = id;
+    }
+
+    public int getHostId(){return hostId;}
+
 
     public double getDelayFactor(){
         return this.DelayFactor;

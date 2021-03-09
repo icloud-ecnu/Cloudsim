@@ -40,30 +40,32 @@ public class IntervalScaleUpTest {
 
     private static List<ContainerVm> vmlist;
 
-    private static List<ContainerHost> hostList;
+    private static List<PowerContainerHost> hostList;
 
-    private static List<Container> containerlist;
+    private static List<PowerContainer> containerlist;
+
+    private static List<UserSideDatacenter> datacenterList;
 
     private static UserSideBroker broker;
 
     private static Map<Integer, ContainerDatacenterCharacteristics> local_characteristics;
 
     //host and vm description. We just concentrate on the containers.
-    private static int ram = 2048; //host memory (MB)
+    private static int ram = 204800; //host memory (MB)
     private static long storage = 1000000; //host storage
     private static int bw = 10000;
-    private static int pesNumber = 2000;
+    private static int pesNumber = 20000;
     private static int mips = 10000;
     private static int ContainerNumPerVm = 50;
 //    private static int CloudletNumPerContainer = 5;
 
 
     //The variables in cloudLet distribution
-    private static int terminated_time = 12000;
+    private static int terminated_time = 60 * 60;
     private static int interval_length = 1200;
     private static int Poisson_lambda = 100;
-    private static int Gaussian_mean = 1000;
-    private static int Gaussian_var = 1000;
+    private static int Gaussian_mean = 100;
+    private static int Gaussian_var = 100;
 
     public static void main(String[] args) {
 
@@ -71,24 +73,32 @@ public class IntervalScaleUpTest {
 
         try {
             // First step: Initialize some variables.
+            CloudSim.LinearScaleUpNum = 30;
             double overUtilizationThreshold = 0.80;
             double underUtilizationThreshold = 0.70;
             int overBookingFactor = 80;
-            int DatacenterNumber = 4;
-            int HostNumber = DatacenterNumber * 100;
+            int DatacenterNumber = 10;
+            int HostNumber = DatacenterNumber * 20;
             int VmNumber = HostNumber;
-            int ContainerNumber = 4;
+            int ContainerNumber = CloudSim.LinearScaleUpNum;
             int num_user = 1;   // number of cloud users
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
 
             Log.set_log_level(10);
-            Log.setAcrossDatacenterSHOW(false);
+            Log.SetLogStdOut(Log.Opr.ScaleUp);
+//            Log.SetLogStdOut(Log.Opr.ScaleDown);
+            Log.SetLogStdOut(Log.Opr.Synchronization);
+//            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
+//            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
+//
+
+
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
-            hostList = new ArrayList<ContainerHost>();
+            hostList = new ArrayList<PowerContainerHost>();
             hostList = createHostList(HostNumber);
 
             broker = createBroker(overBookingFactor);
@@ -97,6 +107,7 @@ public class IntervalScaleUpTest {
 
 
             vmlist = new ArrayList<ContainerVm>();
+            datacenterList = new ArrayList<UserSideDatacenter>();
             vmlist = createVmList(brokerId, VmNumber);
             containerlist = createContainerList(brokerId, ContainerNumber);
             ContainerAllocationPolicy containerAllocationPolicy = new PowerContainerAllocationPolicySimple();
@@ -110,7 +121,7 @@ public class IntervalScaleUpTest {
             Random rand = new Random();
             for(int i = 0; i < DatacenterNumber; i++) {
                 double[] location = new double[]{rand.nextInt(10000), rand.nextInt(10000)};
-                List<ContainerHost> subhostList = hostList.subList(hostList.size() / DatacenterNumber * i, hostList.size() / DatacenterNumber * (i + 1));
+                List<PowerContainerHost> subhostList = hostList.subList(hostList.size() / DatacenterNumber * i, hostList.size() / DatacenterNumber * (i + 1));
                 ContainerVmAllocationPolicy vmAllocationPolicy = new
                         PowerContainerVmAllocationPolicyMigrationAbstractHostSelection(subhostList, vmSelectionPolicy,
                         hostSelectionPolicy, overUtilizationThreshold, underUtilizationThreshold);
@@ -118,9 +129,10 @@ public class IntervalScaleUpTest {
                         PowerContainerDatacenterCM.class, subhostList,
                         vmAllocationPolicy, containerAllocationPolicy,
                         getExperimentName("IntervalScaleUpTest", String.valueOf(overBookingFactor)),
-                        ConstantsExamples.SCHEDULING_INTERVAL, logAddress,
+                        interval_length / 10, logAddress,
                         ConstantsExamples.VM_STARTTUP_DELAY, ConstantsExamples.CONTAINER_STARTTUP_DELAY,
                         location);
+                datacenterList.add(e1);
             }
 
             broker.submitVmList(vmlist);
@@ -140,13 +152,16 @@ public class IntervalScaleUpTest {
 //            pre.setVisible(true);
 
             CloudSim.startSimulation();
+            //calculate the total energy and cost.
+            double TotalEnergy = 0, TotalCost = UserSideDatacenter.TotalContainerCost;
+            for(UserSideDatacenter d : datacenterList)
+                TotalEnergy += d.getPower() / (3600 * 1000);
 
-            drawContainerLifeCycle(UserSideDatacenter.AllContainers);
-
+            printContainerList(UserSideDatacenter.AllContainers);
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
             printCloudletList(newList);
             CloudSim.stopSimulation();
-
+            Log.printLine("Cost: " + TotalCost + " Energy:" + TotalEnergy);
             Log.printLine("Interval Scale Up Test finished!");
             ex.setResultPanel(newList);
             // visualize the raw data
@@ -170,9 +185,9 @@ public class IntervalScaleUpTest {
         }
     }
 
-    private static void drawContainerLifeCycle(ArrayList<Container> ContainerList){
-        printContainerList(ContainerList);
-    }
+//    private static void drawContainerLifeCycle(ArrayList<Container> ContainerList){
+//
+//    }
 
     private static String getExperimentName(String... args) {
         StringBuilder experimentName = new StringBuilder();
@@ -190,7 +205,7 @@ public class IntervalScaleUpTest {
     }
 
     public static ContainerDatacenter createDatacenter(String name, Class<? extends ContainerDatacenter> datacenterClass,
-                                                       List<ContainerHost> hostList,
+                                                       List<PowerContainerHost> hostList,
                                                        ContainerVmAllocationPolicy vmAllocationPolicy,
                                                        ContainerAllocationPolicy containerAllocationPolicy,
                                                        String experimentName, double schedulingInterval, String logAddress, double VMStartupDelay,
@@ -214,16 +229,15 @@ public class IntervalScaleUpTest {
         return datacenter;
     }
 
-    public static List<ContainerHost> createHostList(int hostsNumber) {
+    public static List<PowerContainerHost> createHostList(int hostsNumber) {
 
-        ArrayList<ContainerHost> hostList = new ArrayList<ContainerHost>();
+        ArrayList<PowerContainerHost> hostList = new ArrayList<PowerContainerHost>();
         for (int i = 0; i < hostsNumber; ++i) {
             int hostType = i / (int) Math.ceil((double) hostsNumber / ConstantsExamples.HOST_TYPES);
 
             ArrayList<ContainerVmPe> peList = new ArrayList<ContainerVmPe>();
             for(int j = 0; j < pesNumber; j++)
                 peList.add(new ContainerVmPe(j, new ContainerVmPeProvisionerSimple(mips)));
-
 
             hostList.add(new PowerContainerHostUtilizationHistory(IDs.pollId(ContainerHost.class),
                     new ContainerVmRamProvisionerSimple(ram),
@@ -259,9 +273,9 @@ public class IntervalScaleUpTest {
         return containerVms;
     }
 
-    public static List<Container> createContainerList(int brokerId, int containersNumber) {
+    public static List<PowerContainer> createContainerList(int brokerId, int containersNumber) {
         long size = 10000; //image size (MB)
-        ArrayList<Container> containers = new ArrayList<Container>();
+        ArrayList<PowerContainer> containers = new ArrayList<PowerContainer>();
         for (int i = 0; i < containersNumber; ++i) {
             int containerType = i / (int) Math.ceil((double) containersNumber / ConstantsExamples.CONTAINER_TYPES);
             containers.add(new PowerContainer(IDs.pollId(Container.class),
@@ -323,8 +337,6 @@ public class IntervalScaleUpTest {
             );
         }
 
-
-
         Log.printLine(String.format("=======TOTAL COST=======\nFor container resources is: " + UserSideDatacenter.TotalContainerCost));
 
     }
@@ -339,19 +351,37 @@ public class IntervalScaleUpTest {
         String indent = "    ";
 
         Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
-                + "Data center ID" + indent + "VM ID" + indent + "Time" + indent
-                + "Start Time" + indent + "Finish Time" + indent + "Delay Factor");
+                + "Datacenter ID" + indent + "Host ID" + indent
+                + "VM ID" + indent + "Container ID" + indent
+                + "Time" + indent
+                + "Start Time" + indent
+                + "Finish Time" + indent
+                + "Delay Factor");
+        //key: datacenterId   value:cloudlet number
 
+        Map<Integer, Map<Integer, Integer>> Load = new HashMap<Integer, Map<Integer, Integer>>();
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
             cloudlet = list.get(i);
             Log.print(indent + cloudlet.getCloudletId() + indent + indent);
             if (cloudlet.getCloudletStatusString() == "Success") {
                 Log.print("SUCCESS");
+                if(Load.get(cloudlet.getResourceId()) == null)
+                    Load.put(cloudlet.getResourceId(), new HashMap<Integer, Integer>());
+                else{
+                    int hostId = cloudlet.getHostId();
+                    Map<Integer, Integer> hostMap = Load.get(cloudlet.getResourceId());
+                    if(hostMap.get(hostId) == null)
+                        hostMap.put(hostId, 1);
+                    else
+                        hostMap.put(hostId, hostMap.get(hostId) + 1);
+                    Load.put(cloudlet.getResourceId(), hostMap);
+                }
                 Log.printLine(String.format(indent + indent + cloudlet.getResourceId()
-                        + indent + indent + indent + cloudlet.getVmId()
-                        + indent + indent
-                        + dft.format(cloudlet.getActualCPUTime()) + indent
+                        + indent + indent + indent + cloudlet.getHostId()
+                        + indent + indent + cloudlet.getVmId()
+                        + indent + indent + cloudlet.getContainerId()
+                        + indent + indent + indent  + dft.format(cloudlet.getActualCPUTime()) + indent
                         + indent + dft.format(cloudlet.getExecStartTime())
                         + indent + indent
                         + dft.format(cloudlet.getFinishTime())
@@ -359,6 +389,24 @@ public class IntervalScaleUpTest {
                         + dft.format(cloudlet.getDelayFactor())));
             }
         }
+
+
+        for (Integer key : Load.keySet()) {
+            Log.printLine();
+            Map<Integer, Integer> hostMap = Load.get(key);
+            int DatacenterSum = 0;
+            for (Map.Entry<Integer, Integer> entry : hostMap.entrySet()) {
+                DatacenterSum += entry.getValue();
+                Log.printLine("Host ID = " + entry.getKey() + ", CloudLet NUMBER = " + entry.getValue());
+            }
+            Log.printLine("======= Datacenter ID:" + key + ", CloudLet NUMBER = " + DatacenterSum);
+        }
+
+        for(UserSideDatacenter d : datacenterList){
+            double[] pos = d.getLocation();
+            Log.printLine("Datacenter id: " + d.getId() + "  Pos: (" + pos[0] + ", " + pos[1] + ")");
+        }
+
     }
 
 }

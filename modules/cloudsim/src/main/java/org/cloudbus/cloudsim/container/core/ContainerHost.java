@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Created by sareh on 10/07/15.
  */
-public class ContainerHost {
+public class ContainerHost  implements Comparable<ContainerHost>{
 
 
     /**
@@ -658,6 +658,12 @@ public class ContainerHost {
     public void setDatacenter(ContainerDatacenter datacenter) {
         this.datacenter = datacenter;
     }
+
+    @Override
+    public int compareTo(ContainerHost host) {
+        return this.getTotalMips() - host.getTotalMips();
+    }
+
 
 
 }

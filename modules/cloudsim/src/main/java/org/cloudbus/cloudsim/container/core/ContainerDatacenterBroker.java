@@ -260,16 +260,16 @@ public class ContainerDatacenterBroker extends SimEntity {
 
 //            ContainerVm p= ContainerVmList.getById(getVmsCreatedList(), vmId);
             int hostId = ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId();
-            Log.formatLine(4, CloudSim.clock() + ": " + getName() +": The Container #" + containerId +
+            Log.formatLine(Log.Opr.ScaleUp, CloudSim.clock() + ": " + getName() +": The Container #" + containerId +
                      ", is created on Vm #" + vmId
                     + ", On Host#"+ hostId + " in datacenter " +  ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getDatacenter().getId());
             setContainersCreated(getContainersCreated()+1);}
         } else {
             //Container container = ContainerList.getById(getContainerList(), containerId);
-            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Failed Creation of Container #", containerId);
+            Log.formatLine(Log.Opr.ScaleUp, CloudSim.clock() +  ": " +  getName() + ": Failed Creation of Container #" + containerId);
         }
         incrementContainersAcks();
-        if (getContainersAcks() == getContainerList().size()) {
+        if (getContainersAcks() == getContainerList().size() && CloudSim.clock() < 10) {
             //Log.print(getContainersCreatedList().size() + "vs asli"+getContainerList().size());
             submitCloudlets();
             getContainerList().clear();
@@ -421,7 +421,7 @@ public class ContainerDatacenterBroker extends SimEntity {
         String datacenterName = CloudSim.getEntityName(datacenterId);
         for (ContainerVm vm : getVmList()) {
             if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
-                Log.formatLine(String.format("%s: %s: Trying to Create VM #%d in %s", CloudSim.clock(), getName(), vm.getId(), datacenterName));
+                Log.formatLine(Log.Opr.Base, String.format("%s: %s: Trying to Create VM #%d in %s", CloudSim.clock(), getName(), vm.getId(), datacenterName));
                 sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, vm);
                 requestedVms++;
             }
