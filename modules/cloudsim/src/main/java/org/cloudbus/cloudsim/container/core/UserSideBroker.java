@@ -8,6 +8,7 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.lists.VmList;
 
+import java.text.DecimalFormat;
 import java.util.*;
 
 public class UserSideBroker extends ContainerDatacenterBroker{
@@ -69,6 +70,10 @@ public class UserSideBroker extends ContainerDatacenterBroker{
                 processDatacenterStatusUpdate(ev);
                 break;
 
+            case CloudSimTags.VM_DATACENTER_EVENT:
+//                for(int dest : getDatacenterIdsList())
+//                    sendNow(dest, CloudSimTags.VM_DATACENTER_EVENT);
+//                send(getId(), 10, CloudSimTags.VM_DATACENTER_EVENT);
 
             // other unknown tags are processed by this method
             default:
@@ -125,6 +130,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         }
         getCloudletList().removeAll(successfullySubmitted);
         successfullySubmitted.clear();
+        //update the cloudlet processing periodically.
+        sendNow(getId(), CloudSimTags.VM_DATACENTER_EVENT);
         if(FailedSubmitted.size() > 0){
             send(getDatacenterIdsList().get(0), DatacenterStatusUpdateInterval, containerCloudSimTags.SCALABILITY_CHECK, FailedSubmitted.get(0));
         }
@@ -165,12 +172,77 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             }
             Log.formatLine(Log.Opr.Synchronization, CloudSim.clock() +
                     " Synchronization RESULT: SET THE OPTIMAL DATACENTER ID: " + CurrentOptimalDatacenterId );
+            SystemOutDistributionInfo();
+
+
             SynchronizationCount = 0;
             SynchronizationList.clear();
         }
     }
 
 
+    protected void SystemOutDistributionInfo(){
+        List<ContainerCloudlet>ReceivedCloudList = getCloudletReceivedList();
+        List<ContainerCloudlet>SubmittedCloudList = getCloudletSubmittedList();
+        printCloudletList(SubmittedCloudList);
+    }
+
+    private void printCloudletList(List<ContainerCloudlet> list) {
+        int size = list.size();
+        Log.printLine();
+        Log.printLine("Time: " + CloudSim.clock() + "========== Distribution output periodically START==========");
+        Log.printLine("The submitted CloudLets size is:" + size);
+        ContainerCloudlet cloudlet;
+
+        String indent = "    ";
+
+        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
+                + "Datacenter ID" + indent + "Host ID" + indent
+                + "VM ID" + indent + "Container ID" + indent
+                + "Start Time" + indent
+                + "Delay Factor");
+        //key: datacenterId   value:cloudlet number
+        Map<Integer, Map<Integer, Integer>> Load = new HashMap<Integer, Map<Integer, Integer>>();
+        DecimalFormat dft = new DecimalFormat("###.##");
+        for (int i = 0; i < size; i++) {
+            cloudlet = list.get(i);
+            Log.print(indent + cloudlet.getCloudletId() + indent + indent);
+                if(Load.get(cloudlet.getResourceId()) == null)
+                    Load.put(cloudlet.getResourceId(), new HashMap<Integer, Integer>());
+                else{
+                    int hostId = cloudlet.getHostId();
+                    Map<Integer, Integer> hostMap = Load.get(cloudlet.getResourceId());
+                    if(hostMap.get(hostId) == null)
+                        hostMap.put(hostId, 1);
+                    else
+                        hostMap.put(hostId, hostMap.get(hostId) + 1);
+                    Load.put(cloudlet.getResourceId(), hostMap);
+                }
+                Log.printLine(String.format(indent + indent + indent + cloudlet.getResourceId()
+                        + indent + indent + indent + indent + cloudlet.getHostId()
+                        + indent + indent + cloudlet.getVmId()
+                        + indent + indent + indent + cloudlet.getContainerId()
+                        + indent + indent + indent
+                        + indent + dft.format(cloudlet.getExecStartTime())
+                        + indent + indent + indent
+                        + dft.format(cloudlet.getDelayFactor())));
+
+        }
+
+        for (Integer key : Load.keySet()) {
+            Log.printLine();
+            Map<Integer, Integer> hostMap = Load.get(key);
+            int DatacenterSum = 0;
+            for (Map.Entry<Integer, Integer> entry : hostMap.entrySet()) {
+                DatacenterSum += entry.getValue();
+                Log.printLine("Host ID = " + entry.getKey() + ", CloudLets NUMBER = " + entry.getValue());
+            }
+            Log.printLine("======= Datacenter ID:" + key + ", CloudLets NUMBER = " + DatacenterSum);
+        }
+
+        Log.printLine("Time: " + CloudSim.clock() + "========== Distribution output periodically ENDS==========");
+
+    }
 
 
     @Override
@@ -194,7 +266,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             int datacenterID = getDatacenterIdsList().get(i % getDatacenterIdsList().size());
             String datacenterName = CloudSim.getEntityName(datacenterID);
             if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
-                Log.formatLine(String.format("%s: %s: Trying to Create VM #%d in %s", CloudSim.clock(), getName(), vm.getId(), datacenterName));
+                Log.formatLine(Log.Opr.Base, String.format("%s: %s: Trying to Create VM #%d in %s", CloudSim.clock(), getName(), vm.getId(), datacenterName));
                 sendNow(datacenterID, CloudSimTags.VM_CREATE_ACK, vm);
                 requestedVms++;
             }
@@ -225,8 +297,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 
     protected void ProcessContainerScalabilityACK(SimEvent ev){
         //select the result (optimal datacenter) to create the containers.
-        List<Container> l = new ArrayList<Container>(1);
-        Container con = new Container(IDs.pollId(Container.class), getId(), const_container.getWorkloadTotalMips(),
+        List<PowerContainer> l = new ArrayList<PowerContainer>(1);
+        PowerContainer con = new PowerContainer(IDs.pollId(Container.class), getId(), const_container.getMips(),
                 const_container.getNumberOfPes() ,
                 (int)const_container.getRam(),
                 const_container.getBw(), const_container.getSize(),
@@ -250,6 +322,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         ContainerCloudlet cloudlet = (ContainerCloudlet) ev.getData();
         //chris add for update available PEs for containers.
         Container con = ContainerList.getById(getContainersCreatedList(),cloudlet.getContainerId());
+        Log.formatLine(Log.Opr.ScaleDown, CloudSim.clock() + ": " + ": Cloudlet " + cloudlet.getCloudletId()+
+                " returned" + " And the number of finished Cloudlets is:" + getCloudletReceivedList().size() + " Check scale down..");
         if(con != null){
             con.setAvailablePesNum(con.getAvailablePesNum() + cloudlet.getNumberOfPes());
            // Log.formatLine(2, "Chris note: Scale down Judge. Current size: " + con.getAvailablePesNum() + " vs " + con.getNumberOfPes() );
@@ -274,24 +348,21 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         }
 
         getCloudletReceivedList().add(cloudlet);
-        Log.formatLine(2, CloudSim.clock() + ": " + getName() + ": Cloudlet " + cloudlet.getCloudletId()+
-                " returned" + " And the number of finished Cloudlets is:" + getCloudletReceivedList().size());
+
         cloudletsSubmitted--;
-
-
-        if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all cloudlets executed
-            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": All Cloudlets executed. Finishing...");
-            clearDatacenters();
-            finishExecution();
-        } else { // some cloudlets haven't finished yet
-            if (getCloudletList().size() > 0 && cloudletsSubmitted == 0) {
-                // all the cloudlets sent finished. It means that some bount
-                // cloudlet is waiting its VM be created
-                clearDatacenters();
-                createVmsInDatacenter(0);
-            }
-
-        }
+        //because we cannot make sure all the CloudLets are submitted successfully, this part of codes cannot be invoked.
+//        if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all cloudlets executed
+//            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": All Cloudlets executed. Finishing...");
+//            clearDatacenters();
+//            finishExecution();
+//        } else { // some cloudlets haven't finished yet
+//            if (getCloudletList().size() > 0 && cloudletsSubmitted == 0) {
+//                // all the cloudlets sent finished. It means that some bount
+//                // cloudlet is waiting its VM be created
+//                clearDatacenters();
+//                createVmsInDatacenter(0);
+//            }
+//        }
     }
 
 

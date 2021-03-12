@@ -7,7 +7,7 @@ public class NormalDistribution {
     private double variance = 1.0;
     private java.util.Random random;
     NormalDistribution(){
-        Log.formatLine("Prompt: You have not set the parameters of Gaussian distribution, DEFAULT is the standard Normal Distribution");
+        Log.formatLine(Log.Opr.Base,"Prompt: You have not set the parameters of Gaussian distribution, DEFAULT is the standard Normal Distribution");
         random = new java.util.Random();
     }
 

@@ -200,8 +200,11 @@ public class ContainerHost  implements Comparable<ContainerHost>{
      */
     public boolean isSuitableForContainerVm(ContainerVm vm) {
         //Log.printLine("Host: Is suitable for VM???......");
-        return (getContainerVmScheduler().getPeCapacity() >= vm.getCurrentRequestedMaxMips()
-                && getContainerVmScheduler().getAvailableMips() >= vm.getCurrentRequestedTotalMips()
+        double provide_capacity = getContainerVmScheduler().getPeCapacity();
+        double request_capacity = vm.getCurrentRequestedMaxMips();
+        double provide_mips = getContainerVmScheduler().getAvailableMips();
+        double request_mips =  vm.getCurrentRequestedTotalMips();
+        return (provide_capacity >= request_capacity && provide_mips >= request_mips
                 && getContainerVmRamProvisioner().isSuitableForContainerVm(vm, vm.getCurrentRequestedRam()) && getContainerVmBwProvisioner()
                 .isSuitableForContainerVm(vm, vm.getCurrentRequestedBw()));
     }

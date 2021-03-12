@@ -436,7 +436,7 @@ public class Draw extends JFrame{
         }
         double[] data = new double[length];
         int MIPS = 10;
-        int total_mips = MIPS * ConstantsExamples.CLOUDLET_PES;
+        int total_mips = MIPS * 8;//8: cloudLet PEs number
         for (CloudletData item : inputData) {
             double currentValue = item.StartTime;
             if(currentValue >= low && currentValue < up) {

@@ -242,6 +242,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
       protected void RemoveContainerFromDatacenter(SimEvent ev){
           Container con = (Container)ev.getData();
+          int RmConID = con.getId() ;
           //Remove container from its located vm
           for(ContainerVm vm : getContainerVmList()){
               if(vm.getId() == con.getVm().getId()){
@@ -252,6 +253,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
           }
           //Remove container from this datacenter.
           List<Container>containerList = getContainerList();
+          int size =  containerList.size();
           for(int i = 0, len = containerList.size(); i < len; i++){
               if(containerList.get(i).getId() == con.getId()){
                   containerList.remove(i);
@@ -260,6 +262,11 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
               }
           }
           setContainerList(containerList);
+          if(size == getContainerList().size() + 1)
+            Log.formatLine(Log.Opr.ScaleDown, "Container " + RmConID + " has been removed from datacenter "  + getId());
+          else{
+              Log.formatLine(Log.Opr.ScaleDown, "Warning: the container " + RmConID + " might still exists.");
+          }
       }
 
 
@@ -270,7 +277,8 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         for(Container con : getContainerList()){
             if (con.getAvailablePesNum() >= cl.getNumberOfPes()){
                 if(con.getVm() == null){
-                    Log.formatLine(Log.Opr.InnerDatacenterAllocation, "Warning: This container has not been allocated, Container ID: " + con.getId());
+                    Log.formatLine(Log.Opr.InnerDatacenterAllocation, CloudSim.clock() +
+                            " Warning: This container has not been allocated, Container ID: " + con.getId());
                     continue;
                 }
                 ContainerHost host = con.getVm().getHost();
@@ -283,11 +291,12 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
         if(OptionalHosts.size() > 0){
             Collections.sort(OptionalHosts);
-            Container BindingCon =  Optional.get(OptionalHosts.get(0)).get(0);
+            Container BindingCon =  Optional.get(OptionalHosts.get(0)).get(0); // select the optimal container with the lowest cpu utilization
             cl.setContainerId(BindingCon.getId());
             cl.setVmId(BindingCon.getVm().getId());
             cl.setHostId(BindingCon.getVm().getHost().getId());
-            Log.formatLine(Log.Opr.InnerDatacenterAllocation, "Datacenter " + getId()  + ":  Optimal choice: Container id: " + BindingCon.getId() + " has "
+            Log.formatLine(Log.Opr.InnerDatacenterAllocation, CloudSim.clock() + " Datacenter " + getId()
+                    + ":  Optimal choice: Container id: " + BindingCon.getId() + " has "
                     +  BindingCon.getAvailablePesNum() + " PEs <vs> requests "  + cl.getNumberOfPes()
                     + " PEs. So bind Cloudlet " + cl.getCloudletId() + "  to container " + BindingCon.getId());
             BindingCon.setAvailablePesNum(BindingCon.getAvailablePesNum() - cl.getNumberOfPes());
@@ -307,7 +316,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     protected void AccumulateCostOfContainer(Container con){
         double duration = CloudSim.clock() - con.getStartUpTime(); // we add this attribute.
         double cost = duration * getCharacteristics().getCostPerSecond();
-        Log.formatLine(Log.Opr.ScaleDown,"Container " + con.getId() + " is to be removed. Its accumulated cost is: " + cost);
+        Log.formatLine(Log.Opr.ScaleDown,CloudSim.clock() + " Container " + con.getId() + " is to be removed. Its accumulated cost is: " + cost);
         con.setDestroyedTime(CloudSim.clock());
         con.setTotalCost(cost);
         AllContainers.add(con);
@@ -414,11 +423,14 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
             ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
             ContainerVm vm = host.getContainerVm(vmId, userId);
-
+//
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
-            Log.formatLine("chris note: cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
+            Log.formatLine(Log.Opr.ScaleDown, CloudSim.clock() + " Cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
+
             cl.setDelayFactor(getDelayFactorToUser());
+            container.updateContainerProcessing(CloudSim.clock(),
+                    getContainerAllocationPolicy().getContainerVm(container).getContainerScheduler().getAllocatedMipsForContainer(container));
 
             // if this cloudlet is in the exec queue
             if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
@@ -431,11 +443,10 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
                 data[0] = getId();
                 data[1] = cl.getCloudletId();
                 data[2] = CloudSimTags.TRUE;
-
                 int tag = CloudSimTags.CLOUDLET_SUBMIT_ACK;
                 sendNow(cl.getUserId(), tag, data);
-
             }
+
         } catch (ClassCastException c) {
             Log.printLine(String.format("%s.processCloudletSubmit(): ClassCastException error.", getName()));
             c.printStackTrace();
@@ -443,7 +454,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
             Log.printLine(String.format("%s.processCloudletSubmit(): Exception error.", getName()));
             e.printStackTrace();
         }
-        checkCloudletCompletion();
+
     }
 
     @Override
@@ -507,7 +518,6 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
             }
             setPower(getPower() + timeFrameDatacenterEnergy);
         }
-
 
     }
 

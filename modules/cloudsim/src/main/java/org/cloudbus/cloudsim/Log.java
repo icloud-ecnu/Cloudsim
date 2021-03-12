@@ -143,7 +143,7 @@ public class Log {
 	 */
 	public static void printLine(String message) {
 		if (!isDisabled()) {
-			print(message + LINE_SEPARATOR);
+			System.out.println(message + LINE_SEPARATOR);
 		}
 	}
 
@@ -152,7 +152,7 @@ public class Log {
 	 */
 	public static void printLine() {
 		if (!isDisabled()) {
-			print(LINE_SEPARATOR);
+			System.out.println(LINE_SEPARATOR);
 		}
 	}
 

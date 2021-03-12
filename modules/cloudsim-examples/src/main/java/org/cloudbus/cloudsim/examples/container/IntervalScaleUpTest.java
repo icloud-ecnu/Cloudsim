@@ -33,6 +33,9 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+
 public class IntervalScaleUpTest {
 
 
@@ -53,19 +56,22 @@ public class IntervalScaleUpTest {
     //host and vm description. We just concentrate on the containers.
     private static int ram = 204800; //host memory (MB)
     private static long storage = 1000000; //host storage
-    private static int bw = 10000;
-    private static int pesNumber = 20000;
-    private static int mips = 10000;
+    private static int bw = 100000;
+    private static int pesNumber = 2000;
+    private final static int mips = 10;
     private static int ContainerNumPerVm = 50;
-//    private static int CloudletNumPerContainer = 5;
+    private static int CloudletNumPerContainer = 5;
+    private final static int CloudletPesNum = 8;
 
 
     //The variables in cloudLet distribution
-    private static int terminated_time = 60 * 60;
+    private static int terminated_time = 6 * 60 * 60;
     private static int interval_length = 1200;
     private static int Poisson_lambda = 100;
-    private static int Gaussian_mean = 100;
-    private static int Gaussian_var = 100;
+    private static int Gaussian_mean = 1000;
+    private static int Gaussian_var = 1000;
+
+    private static String StdOutRedirectPath = "E://CloudSimOutput.txt";
 
     public static void main(String[] args) {
 
@@ -85,39 +91,44 @@ public class IntervalScaleUpTest {
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
-
+            //set the viewable logs.
             Log.set_log_level(10);
-            Log.SetLogStdOut(Log.Opr.ScaleUp);
+//            Log.SetLogStdOut(Log.Opr.Base);
+//            Log.SetLogStdOut(Log.Opr.ScaleUp);
 //            Log.SetLogStdOut(Log.Opr.ScaleDown);
-            Log.SetLogStdOut(Log.Opr.Synchronization);
+//            Log.SetLogStdOut(Log.Opr.Synchronization);
 //            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
 //            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
-//
+            //Redirect the standard output to the specified file.
+            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
+            System.setOut(ps);
 
 
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
+            //create host List
             hostList = new ArrayList<PowerContainerHost>();
             hostList = createHostList(HostNumber);
-
+            //create broker.
             broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
-//            UserSideUser user = new UserSideUser(brokerId, UserCoo);
 
-
+            //create VMList, containerList.
             vmlist = new ArrayList<ContainerVm>();
-            datacenterList = new ArrayList<UserSideDatacenter>();
             vmlist = createVmList(brokerId, VmNumber);
             containerlist = createContainerList(brokerId, ContainerNumber);
+
+
+            //Set the default allocation policy, a new allocation strategy can be achieved by creating a new policy class.
             ContainerAllocationPolicy containerAllocationPolicy = new PowerContainerAllocationPolicySimple();
             PowerContainerVmSelectionPolicy vmSelectionPolicy = new PowerContainerVmSelectionPolicyMaximumUsage();
             HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyFirstFit();
 
 
 
-            // Second step: Create Datacenters
-            //Datacenters are the resource providers in CloudSim. We need at list one of them to run a CloudSim simulation
+            //Create DatacenterList. Assign the hosts to each datacenter evenly .
+            datacenterList = new ArrayList<UserSideDatacenter>();
             Random rand = new Random();
             for(int i = 0; i < DatacenterNumber; i++) {
                 double[] location = new double[]{rand.nextInt(10000), rand.nextInt(10000)};
@@ -138,18 +149,20 @@ public class IntervalScaleUpTest {
             broker.submitVmList(vmlist);
             broker.submitContainerList(containerlist);
 
+
+            //Initialize the request distribution by setting the IntervalLength and some other parameters.
             Draw ex = new Draw();
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
-                Log.formatLine(4, "cloudlet id: " + cl.getCloudletId() + " length is " + cl.getCloudletLength());
+                Log.formatLine(Log.Opr.Base, "Initialization: cloudlet id: " + cl.getCloudletId()
+                        + " length is " + cl.getCloudletLength());
             }
             ex.setInputDataPanel(self_design_distribution);
             broker.submitCloudletList(cloudletList);
-//            Draw pre = new Draw(cloudletList, 12000, 1200, 100, 100);
-//            pre.setVisible(true);
+
 
             CloudSim.startSimulation();
             //calculate the total energy and cost.
@@ -185,9 +198,7 @@ public class IntervalScaleUpTest {
         }
     }
 
-//    private static void drawContainerLifeCycle(ArrayList<Container> ContainerList){
-//
-//    }
+
 
     private static String getExperimentName(String... args) {
         StringBuilder experimentName = new StringBuilder();
@@ -280,9 +291,9 @@ public class IntervalScaleUpTest {
             int containerType = i / (int) Math.ceil((double) containersNumber / ConstantsExamples.CONTAINER_TYPES);
             containers.add(new PowerContainer(IDs.pollId(Container.class),
                     brokerId,
-                    mips/ContainerNumPerVm,
+                    mips,
                     pesNumber/ContainerNumPerVm, ram/ContainerNumPerVm, bw/ContainerNumPerVm, 0L, "Xen",
-                    new ContainerCloudletSchedulerDynamicWorkload(mips/ContainerNumPerVm, pesNumber/ContainerNumPerVm),
+                    new ContainerCloudletSchedulerDynamicWorkload(mips, CloudletPesNum),
                     ConstantsExamples.SCHEDULING_INTERVAL));
         }
         return containers;
@@ -296,17 +307,17 @@ public class IntervalScaleUpTest {
 
         try {
             double [] UserCoo = new double[]{0, 0};
-            Container c = new PowerContainer(IDs.pollId(Container.class),
+            Container c =new PowerContainer(IDs.pollId(Container.class),
                     -1,
-                    (double) ConstantsExamples.CONTAINER_MIPS[0],
-                    ConstantsExamples.CONTAINER_PES[0], ConstantsExamples.CONTAINER_RAM[0], ConstantsExamples.CONTAINER_BW, 0L, "Xen",
-                    new ContainerCloudletSchedulerDynamicWorkload(ConstantsExamples.CONTAINER_MIPS[0], ConstantsExamples.CONTAINER_PES[0]), ConstantsExamples.SCHEDULING_INTERVAL);
+                    mips,
+                    pesNumber/ContainerNumPerVm, ram/ContainerNumPerVm, bw/ContainerNumPerVm, 0L, "Xen",
+                    new ContainerCloudletSchedulerDynamicWorkload(mips, CloudletPesNum),
+                    ConstantsExamples.SCHEDULING_INTERVAL);
             broker = new UserSideBroker("Broker", overBookingFactor, c, UserCoo, interval_length);
         } catch (Exception var2) {
             var2.printStackTrace();
             System.exit(0);
         }
-
         return broker;
     }
 

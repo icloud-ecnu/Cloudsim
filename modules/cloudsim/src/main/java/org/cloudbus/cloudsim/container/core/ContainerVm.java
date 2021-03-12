@@ -848,10 +848,33 @@ public class ContainerVm {
      * @return true, if is suitable for container
      */
     public boolean isSuitableForContainer(Container container) {
+        double provide_capacity = getContainerScheduler().getPeCapacity();
+        double request_capacity = container.getCurrentRequestedMaxMips();
+        double provide_mips = getContainerScheduler().getAvailableMips();
+        double request_mips =  container.getCurrentRequestedTotalMips();
+        return (provide_capacity >= request_capacity && provide_mips >= request_mips
+            && getContainerRamProvisioner().isSuitableForContainer(container, container.getCurrentRequestedRam())
+            && getContainerBwProvisioner().isSuitableForContainer(container, container.getCurrentRequestedBw())) ;
 
-        return (getContainerScheduler().getPeCapacity() >= container.getCurrentRequestedMaxMips()&& getContainerScheduler().getAvailableMips() >= container.getWorkloadTotalMips()
-                && getContainerRamProvisioner().isSuitableForContainer(container, container.getCurrentRequestedRam()) && getContainerBwProvisioner()
-                .isSuitableForContainer(container, container.getCurrentRequestedBw()));
+
+//        if(getContainerScheduler().getPeCapacity() < container.getCurrentRequestedMaxMips()){
+////            Log.formatLine(Log.Opr.ScaleUp, " Warning ! PeCapacity unsatisfied."
+////                    + getContainerScheduler().getPeCapacity() + " <vs> " + container.getCurrentRequestedMaxMips() );
+//            return false;
+//        }
+//        if(getContainerScheduler().getAvailableMips() < container.getWorkloadTotalMips()){
+////            Log.formatLine(Log.Opr.ScaleUp, " Warning ! Available mips unsatisfied.");
+//            return false;
+//        }
+//        if(!getContainerRamProvisioner().isSuitableForContainer(container, container.getCurrentRequestedRam()) ){
+////            Log.formatLine(Log.Opr.ScaleUp, " Warning ! Ram resources unsatisfied.");
+//            return false;
+//        }
+//        if(!getContainerBwProvisioner().isSuitableForContainer(container, container.getCurrentRequestedBw())){
+////            Log.formatLine(Log.Opr.ScaleUp, " Warning ! Bw resources unsatisfied.");
+//            return false;
+//        }
+//        return true;
     }
 
        /**
@@ -867,7 +890,7 @@ public class ContainerVm {
             containerDeallocate(container);
 //            Log.printConcatLine("The Container To remove is :   ", container.getId(), "Size before removing is ", getContainerList().size(), "  vm ID is: ", getId());
             getContainerList().remove(container);
-            Log.formatLine(4, "ContainerVm# "+getId()+" containerDestroy:......" + container.getId() + "Is deleted from the list");
+            Log.formatLine(4, "ContainerVm#"+getId()+" containerDestroy:......  " + container.getId() + "Is deleted from the list");
 
 //            Log.printConcatLine("Size after removing", getContainerList().size());
             while(getContainerList().contains(container)){

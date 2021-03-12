@@ -5,7 +5,7 @@ import org.cloudbus.cloudsim.Log;
 public class PoissonDistribution {
     private double lambda = 10;
     PoissonDistribution(){
-        Log.formatLine("Prompt: You have not set the lambda value, and adopt the DEFAULT: 10 !!!");
+        Log.formatLine(Log.Opr.Base, "Prompt: You have not set the lambda value for the Poisson distribution, and adopt the DEFAULT: 10 !!!");
     }
 
     PoissonDistribution(double lambda){

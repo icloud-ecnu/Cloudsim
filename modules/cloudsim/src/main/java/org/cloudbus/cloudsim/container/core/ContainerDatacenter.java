@@ -309,7 +309,8 @@ public class ContainerDatacenter extends SimEntity {
                         container.setBeingInstantiated(false);
                     }
                     container.setStartUpTime(CloudSim.clock());
-                    container.updateContainerProcessing(CloudSim.clock(), getContainerAllocationPolicy().getContainerVm(container).getContainerScheduler().getAllocatedMipsForContainer(container));
+                    container.updateContainerProcessing(CloudSim.clock(),
+                            getContainerAllocationPolicy().getContainerVm(container).getContainerScheduler().getAllocatedMipsForContainer(container));
                 } else {
                     data[0] = -1;
                     //notAssigned.add(container);
@@ -1041,6 +1042,7 @@ public class ContainerDatacenter extends SimEntity {
      * @post $none
      */
     protected void checkCloudletCompletion() {
+//        Log.printLine(CloudSim.clock() + "  Datacenter " + getId() + " check CloudLet Completion... ");
         List<? extends ContainerHost> list = getVmAllocationPolicy().getContainerHostList();
         for (int i = 0; i < list.size(); i++) {
             ContainerHost host = list.get(i);
@@ -1049,6 +1051,8 @@ public class ContainerDatacenter extends SimEntity {
                     while (container.getContainerCloudletScheduler().isFinishedCloudlets()) {
                         Cloudlet cl = container.getContainerCloudletScheduler().getNextFinishedCloudlet();
                         if (cl != null) {
+//                            Log.printLine(CloudSim.clock() + "  Datacenter " + getId()
+//                                    + " CloudLet " + cl.getCloudletId() + " will return.");
                             sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
                         }
                     }

@@ -259,8 +259,9 @@ public class ContainerCloudletSchedulerDynamicWorkload extends ContainerCloudlet
          * @return the estimated finish time
          */
         public double getEstimatedFinishTime(ResCloudlet rcl, double time) {
-            return time
-                    + ((rcl.getRemainingCloudletLength()) / getTotalCurrentAllocatedMipsForCloudlet(rcl, time));
+           double length = rcl.getRemainingCloudletLength();
+           double mips = getTotalCurrentAllocatedMipsForCloudlet(rcl, time);
+            return time + length / mips;
         }
 
         /**
