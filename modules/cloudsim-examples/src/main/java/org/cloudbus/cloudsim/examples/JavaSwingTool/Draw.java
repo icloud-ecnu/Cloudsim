@@ -437,15 +437,25 @@ public class Draw extends JFrame{
         double[] data = new double[length];
         int MIPS = 10;
         int total_mips = MIPS * 8;//8: cloudLet PEs number
+        double min_v = gaussian_mean + gaussian_var, max_v = 0;
         for (CloudletData item : inputData) {
             double currentValue = item.StartTime;
             if(currentValue >= low && currentValue < up) {
-                data[index] = (double) item.RequestLength / total_mips;
+                double time = (double) item.RequestLength / total_mips / 60;
+                min_v = Math.min(min_v, time);
+                max_v = Math.max(max_v, time);
+                data[index] = time;
                 index++;
             }
         }
         HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("(Request Length, Request Number) ", data, (int)(gaussian_var / 5), (double)(gaussian_mean - gaussian_var/2) / total_mips, (double) (gaussian_mean + gaussian_var/2) / total_mips);
+        dataset.addSeries(
+                "(Request Length, Request Number) ",
+                data,
+                20,
+                min_v,
+                max_v
+        );
         return dataset;
     }
 
@@ -506,7 +516,7 @@ public class Draw extends JFrame{
             int terminated_time_test = 24 * 60 * 60; //24 hours
             int interval_length_test = 20 * 60; // 20 minutes
             int gaussian_mean_test = 1000;
-            int gaussian_var_test = 100;
+            int gaussian_var_test = 1000;
             int poisson_lambda_test = 10000;
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time_test, interval_length_test, poisson_lambda_test, gaussian_mean_test, gaussian_var_test);
             List<ContainerCloudlet>  cloudletList_test = self_design_distribution.GetWorkloads();
