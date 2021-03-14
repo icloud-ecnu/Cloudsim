@@ -36,7 +36,7 @@ import java.util.List;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 
-public class IntervalScaleUpTest {
+public class ScalabilityAndLoadBalanceTest {
 
 
     private static List<ContainerCloudlet> cloudletList;
@@ -57,20 +57,22 @@ public class IntervalScaleUpTest {
     private static int ram = 204800; //host memory (MB)
     private static long storage = 1000000; //host storage
     private static int bw = 100000;
-    private static int pesNumber = 2000;
-    private final static int mips = 10;
+    private static int pesNumber = 2000; // PEs number in one host/VM, we assume vm == host
+    private final static int mips = 10; //in one PE
     private static int ContainerNumPerVm = 50;
     private static int CloudletNumPerContainer = 5;
-    private final static int CloudletPesNum = 8;
+    private static int CloudletPesNum = 8;
+//    private final static int CloudletPesNum = pesNumber / (ContainerNumPerVm * CloudletNumPerContainer);
 
 
     //The variables in cloudLet distribution
     private static int terminated_time = 6 * 60 * 60;
     private static int interval_length = 1200;
-    private static int Poisson_lambda = 100;
-    private static int Gaussian_mean = 1000;
-    private static int Gaussian_var = 1000;
+    private static int Poisson_lambda = 200;
+    private static int Gaussian_mean = 60000;
+    private static int Gaussian_var = 1000000;
 
+    //Standard terminal output redirection path setting.
     private static String StdOutRedirectPath = "E://CloudSimOutput.txt";
 
     public static void main(String[] args) {
@@ -91,14 +93,14 @@ public class IntervalScaleUpTest {
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
-            //set the viewable logs.
+            //set the viewable logs, convi
             Log.set_log_level(10);
-//            Log.SetLogStdOut(Log.Opr.Base);
-//            Log.SetLogStdOut(Log.Opr.ScaleUp);
-//            Log.SetLogStdOut(Log.Opr.ScaleDown);
-//            Log.SetLogStdOut(Log.Opr.Synchronization);
-//            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
-//            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
+            Log.SetLogStdOut(Log.Opr.Base);
+            Log.SetLogStdOut(Log.Opr.ScaleUp);
+            Log.SetLogStdOut(Log.Opr.ScaleDown);
+            Log.SetLogStdOut(Log.Opr.Synchronization);
+            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
+            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
             //Redirect the standard output to the specified file.
             PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
             System.setOut(ps);
@@ -151,7 +153,7 @@ public class IntervalScaleUpTest {
 
 
             //Initialize the request distribution by setting the IntervalLength and some other parameters.
-            Draw ex = new Draw();
+            Draw ex = new Draw(mips, CloudletPesNum);
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
@@ -165,16 +167,12 @@ public class IntervalScaleUpTest {
 
 
             CloudSim.startSimulation();
-            //calculate the total energy and cost.
-            double TotalEnergy = 0, TotalCost = UserSideDatacenter.TotalContainerCost;
-            for(UserSideDatacenter d : datacenterList)
-                TotalEnergy += d.getPower() / (3600 * 1000);
-
+            //calculate the total cost.
             printContainerList(UserSideDatacenter.AllContainers);
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
             printCloudletList(newList);
             CloudSim.stopSimulation();
-            Log.printLine("Cost: " + TotalCost + " Energy:" + TotalEnergy);
+            Log.printLine("Cost: " +  UserSideDatacenter.TotalContainerCost);
             Log.printLine("Interval Scale Up Test finished!");
             ex.setResultPanel(newList);
             // visualize the raw data
@@ -323,8 +321,6 @@ public class IntervalScaleUpTest {
 
 
     private static void printContainerList(List<Container> list) {
-
-
         List<Container> UnRemovedList = broker.getContainersCreatedList();
         for(int i = 0; i < UnRemovedList.size(); i++){
             Container con = UnRemovedList.get(i);
@@ -400,7 +396,6 @@ public class IntervalScaleUpTest {
                         + dft.format(cloudlet.getDelayFactor())));
             }
         }
-
 
         for (Integer key : Load.keySet()) {
             Log.printLine();

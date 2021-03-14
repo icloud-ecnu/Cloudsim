@@ -664,7 +664,7 @@ public class ContainerHost  implements Comparable<ContainerHost>{
 
     @Override
     public int compareTo(ContainerHost host) {
-        return this.getTotalMips() - host.getTotalMips();
+        return (int)(host.getAvailableMips() - this.getAvailableMips() );
     }
 
 

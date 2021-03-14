@@ -44,6 +44,8 @@ import javax.swing.border.EmptyBorder;
 
 public class Draw extends JFrame{
     private JTabbedPane tabPane ;
+    private int mips = 10;
+    private int CloudLetPesNumber = 8;
 
     private static class CloudletData {
         public double StartTime;
@@ -56,7 +58,9 @@ public class Draw extends JFrame{
         }
     }
 
-    public Draw() {
+    public Draw(int mips, int CloudLetPesNumber) {
+        this.mips = mips;
+        this.CloudLetPesNumber = CloudLetPesNumber;
         this.tabPane = createTabPanel();
         this.tabPane.setPreferredSize(new Dimension(1200, 900));
         setContentPane(this.tabPane);
@@ -64,6 +68,10 @@ public class Draw extends JFrame{
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
+
+
+
+
 
 
     /**
@@ -435,8 +443,7 @@ public class Draw extends JFrame{
             }
         }
         double[] data = new double[length];
-        int MIPS = 10;
-        int total_mips = MIPS * 8;//8: cloudLet PEs number
+        int total_mips =  this.mips * this.CloudLetPesNumber;//8: cloudLet PEs number
         double min_v = gaussian_mean + gaussian_var, max_v = 0;
         for (CloudletData item : inputData) {
             double currentValue = item.StartTime;
@@ -518,6 +525,8 @@ public class Draw extends JFrame{
             int gaussian_mean_test = 1000;
             int gaussian_var_test = 1000;
             int poisson_lambda_test = 10000;
+            int mips = 10;
+            int CloudPesNumber = 8;
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time_test, interval_length_test, poisson_lambda_test, gaussian_mean_test, gaussian_var_test);
             List<ContainerCloudlet>  cloudletList_test = self_design_distribution.GetWorkloads();
             for(ContainerCloudlet cl : cloudletList_test){
@@ -536,7 +545,7 @@ public class Draw extends JFrame{
                         UIManager.put(key, font);
                     }
                 }
-                Draw ex = new Draw();
+                Draw ex = new Draw(mips, CloudPesNumber);
                 ex.setInputDataPanel(self_design_distribution);
                 ex.setResultPanel(cloudletList_test);
                 ex.setVisible(true);

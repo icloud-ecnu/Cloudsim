@@ -173,8 +173,6 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             Log.formatLine(Log.Opr.Synchronization, CloudSim.clock() +
                     " Synchronization RESULT: SET THE OPTIMAL DATACENTER ID: " + CurrentOptimalDatacenterId );
             SystemOutDistributionInfo();
-
-
             SynchronizationCount = 0;
             SynchronizationList.clear();
         }

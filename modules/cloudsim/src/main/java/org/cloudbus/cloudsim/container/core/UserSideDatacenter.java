@@ -359,7 +359,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
     @Override
     protected  void updateCloudletProcessing(){
-        //do nothing
+        //do nothing, this part of original codes are devoted to do vm migrating, which is not required in this project.
     }
 
 
@@ -476,7 +476,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         }
 
         if (result) {
-            Log.formatLine(4, String.format("%s VM ID #%d has been allocated on Host #%d in Datacenter #%d",
+            Log.formatLine(Log.Opr.Base, String.format("%s VM ID #%d has been allocated on Host #%d in Datacenter #%d",
                     CloudSim.clock(), containerVm.getId(), containerVm.getHost().getId(),containerVm.getHost().getDatacenter().getId()));
             getContainerVmList().add(containerVm);
             if (containerVm.isBeingInstantiated()) {
