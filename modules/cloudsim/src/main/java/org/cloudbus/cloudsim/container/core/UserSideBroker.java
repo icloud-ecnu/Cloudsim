@@ -21,6 +21,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     private int SynchronizationCount = 0;
     private int CurrentOptimalDatacenterId = -1;
     private double CurrentDelay;
+
     private ArrayList<SimEvent> SynchronizationList = new ArrayList<SimEvent>();
 
     @Override
@@ -94,19 +95,9 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         this.const_container = e;
         this.coordinate[0] = coordinate[0];
         this.coordinate[1] = coordinate[1];
-        this.DatacenterStatusUpdateInterval =  interval / 10;
+        this.DatacenterStatusUpdateInterval =  interval;
 
     }
-
-    public void setLocation(double[] a) {
-        this.coordinate[0] = a[0];
-        this.coordinate[1] = a[1];
-    }
-
-    public double[] getLocation(){
-        return this.coordinate;
-    }
-
 
 
     @Override
@@ -348,7 +339,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         getCloudletReceivedList().add(cloudlet);
 
         cloudletsSubmitted--;
-        //because we cannot make sure all the CloudLets are submitted successfully, this part of codes cannot be invoked.
+//because we cannot make sure all the CloudLets are submitted successfully, this part of codes cannot be invoked.
 //        if (getCloudletList().size() == 0 && cloudletsSubmitted == 0) { // all cloudlets executed
 //            Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": All Cloudlets executed. Finishing...");
 //            clearDatacenters();
@@ -402,6 +393,15 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 //        return OptimalDatacenter;
 //    }
 
+
+    public void setLocation(double[] a) {
+        this.coordinate[0] = a[0];
+        this.coordinate[1] = a[1];
+    }
+
+    public double[] getLocation(){
+        return this.coordinate;
+    }
 
 
 

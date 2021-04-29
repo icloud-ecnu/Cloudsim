@@ -102,8 +102,8 @@ public class ScalabilityAndLoadBalanceTest {
             Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
             Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
             //Redirect the standard output to the specified file.
-            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
-            System.setOut(ps);
+//            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
+//            System.setOut(ps);
 
 
             Calendar calendar = Calendar.getInstance();

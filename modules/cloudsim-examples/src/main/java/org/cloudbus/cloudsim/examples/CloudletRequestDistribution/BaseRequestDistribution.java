@@ -5,6 +5,7 @@ import org.cloudbus.cloudsim.UtilizationModelStochastic;
 import org.cloudbus.cloudsim.container.core.ContainerCloudlet;
 import org.cloudbus.cloudsim.examples.container.ConstantsExamples;
 import org.cloudbus.cloudsim.examples.container.ContainerCloudSimExample1;
+import org.cloudbus.cloudsim.examples.container.PredictationTest;
 import org.cloudbus.cloudsim.examples.container.UtilizationModelPlanetLabInMemoryExtended;
 
 import java.io.IOException;
@@ -20,24 +21,10 @@ public class BaseRequestDistribution {
     private int Poisson_lambda;
     private double Gaussian_mean;
     private double Gaussian_var;
-
+    //Fetch more info for new generation method.
     private List<ContainerCloudlet> required_workloads;
+    private List<List<ContainerCloudlet>> IntervalWorkloads;
 
-
-//    public void SetIntervalLength(int interval_length){
-//        this.interval_length = interval_length;
-//    }
-
-//    public static void main(String[] args) {
-//        BaseRequestDistribution X = new BaseRequestDistribution(101, 10,
-//                10,
-//                1000, 100);
-//
-//        for(Cloudlet c : X.GetWorkloads()) {
-//            Log.formatLine("cloudlet id: " + c.getCloudletId() + " Start execution time: "
-//                    + c.getExecStartTime() + " length: " + c.getCloudletLength());
-//        }
-//    }
 
     public BaseRequestDistribution(int terminated_time, int interval_length, int Poisson_lambda, double Gaussian_mean, double Gaussian_var) throws IOException {
        // SetIntervalLength(interval_length);
@@ -48,26 +35,16 @@ public class BaseRequestDistribution {
         this.Gaussian_var = Gaussian_var;
         PoissonDistribution RequestNum_distribution = new PoissonDistribution(Poisson_lambda);
         required_workloads = new ArrayList<ContainerCloudlet>();
+        IntervalWorkloads = new ArrayList<List<ContainerCloudlet>>();
         int CloudletID = 0;
-        //Container Cloudlet generation.
-//        String inputFolderName = ContainerCloudSimExample1.class.getClassLoader().getResource("workload/planetlab").getPath();
-//        ArrayList<String> file_path = new ArrayList<String>();
-//        java.io.File inputFolder1 = new java.io.File(inputFolderName);
-//        java.io.File[] files1 = inputFolder1.listFiles();
-//        for (java.io.File aFiles1 : files1) {
-//            java.io.File inputFolder = new java.io.File(aFiles1.toString());
-//            java.io.File[] files = inputFolder.listFiles();
-//            for (int i = 0; i < files.length; ++i){
-////                Log.formatLine(files[i].getAbsolutePath());
-//                file_path.add(files[i].getAbsolutePath());
-//            }
-//        }
-//        Log.formatLine("File Path: " + file_path.size());
+
         Random rand = new Random();
         for(int cur_time = 0; cur_time < terminated_time; cur_time += interval_length) {
             int RequestNum = RequestNum_distribution.GetNextPoisson();
             NormalDistribution CloudletLength_distribution = new NormalDistribution(Gaussian_mean, Gaussian_var);
             UtilizationModelStochastic UtilizationModelStochastic = new UtilizationModelStochastic();
+            List<ContainerCloudlet> IntervalWorkloadList = new ArrayList<ContainerCloudlet>();
+            Random randForX = new Random();
             for (int i = 0; i < RequestNum; i++) {
                 double CloudletLength = CloudletLength_distribution.GetNextGaussian();
                 ContainerCloudlet tmp = new ContainerCloudlet(CloudletID++, (long) CloudletLength, ConstantsExamples.CLOUDLET_PES, 300L, 300L,
@@ -75,15 +52,21 @@ public class BaseRequestDistribution {
                         UtilizationModelStochastic,
                         UtilizationModelStochastic, UtilizationModelStochastic);
                 tmp.setExecStartTime(cur_time + rand.nextInt(interval_length));
+                tmp.setCallPositionX((int)(randForX.nextGaussian() * Math.sqrt(250000)
+                        + (cur_time * 1.0) /(24 * 60  * 60) * 10000 ));
+                tmp.setCallPositionY(rand.nextInt(10000));
+                tmp.UpdateHistoricalHangOnTimeList((int)PredictationTest.ConvertLengthToTime(CloudletLength));
+                IntervalWorkloadList.add(tmp);
                 required_workloads.add(tmp);
             }
+            IntervalWorkloads.add(IntervalWorkloadList);
         }
     }
 
-    public List<ContainerCloudlet> GetWorkloads(){
-        return required_workloads;
+    public List<List<ContainerCloudlet>> Get2DxWorkloads(){
+        return IntervalWorkloads;
     }
-
+    public List<ContainerCloudlet> GetWorkloads(){return required_workloads;}
     public int GetTerminatedTime(){
         return this.terminated_time;
     }
