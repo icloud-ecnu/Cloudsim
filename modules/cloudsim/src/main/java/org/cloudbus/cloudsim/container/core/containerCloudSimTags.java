@@ -47,6 +47,7 @@ public class containerCloudSimTags {
     public static final int DATACENTER_STATUS_UPDATE = ContainerSimBASE + 24;
     public static final int CONTAINER_REMOVE = ContainerSimBASE + 25;
     public static final int CLOUDLET_BINDING = ContainerSimBASE + 26;
+    public static final int SCALE_DOWN = ContainerSimBASE + 27;
 //    public static final int CLOUDLET_DEALY_SETTING =  ContainerSimBASE + 25;
 
 

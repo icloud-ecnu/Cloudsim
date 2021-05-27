@@ -3,6 +3,7 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.UtilizationModelStochastic;
 import org.cloudbus.cloudsim.container.core.ContainerCloudlet;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.examples.container.ConstantsExamples;
 import org.cloudbus.cloudsim.examples.container.ContainerCloudSimExample1;
 import org.cloudbus.cloudsim.examples.container.PredictationTest;
@@ -23,7 +24,7 @@ public class BaseRequestDistribution {
     private double Gaussian_var;
     //Fetch more info for new generation method.
     private List<ContainerCloudlet> required_workloads;
-    private List<List<ContainerCloudlet>> IntervalWorkloads;
+    private List<List<ContainerCloudlet>> IntervalWorkloads;    //全部的数据
 
 
     public BaseRequestDistribution(int terminated_time, int interval_length, int Poisson_lambda, double Gaussian_mean, double Gaussian_var) throws IOException {
@@ -55,11 +56,12 @@ public class BaseRequestDistribution {
                 tmp.setCallPositionX((int)(randForX.nextGaussian() * Math.sqrt(250000)
                         + (cur_time * 1.0) /(24 * 60  * 60) * 10000 ));
                 tmp.setCallPositionY(rand.nextInt(10000));
-                tmp.UpdateHistoricalHangOnTimeList((int)PredictationTest.ConvertLengthToTime(CloudletLength));
+                tmp.UpdateHistoricalHangOnTimeList((int)(CloudSim.ConvertLengthToTime(CloudletLength)));       //+++++++UpdateHistoricalHangOnTimeList++++++++++++
                 IntervalWorkloadList.add(tmp);
                 required_workloads.add(tmp);
+                //IntervalWorkloadList每次存储的是一个时间段的所有的连接，
             }
-            IntervalWorkloads.add(IntervalWorkloadList);
+            IntervalWorkloads.add(IntervalWorkloadList);    //将一个时间段作为一个list元素进行存储，IntervalWorkloads最后存储的是一天的，是一个二维的，横向是每个连接，竖向是每个时间段
         }
     }
 

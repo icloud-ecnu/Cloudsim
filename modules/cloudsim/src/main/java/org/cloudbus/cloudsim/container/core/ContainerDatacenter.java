@@ -1042,7 +1042,7 @@ public class ContainerDatacenter extends SimEntity {
      * @post $none
      */
     protected void checkCloudletCompletion() {
-//        Log.printLine(CloudSim.clock() + "  Datacenter " + getId() + " check CloudLet Completion... ");
+        Log.printLine(CloudSim.clock() + "  Datacenter " + getId() + " check CloudLet Completion... ");
         List<? extends ContainerHost> list = getVmAllocationPolicy().getContainerHostList();
         for (int i = 0; i < list.size(); i++) {
             ContainerHost host = list.get(i);

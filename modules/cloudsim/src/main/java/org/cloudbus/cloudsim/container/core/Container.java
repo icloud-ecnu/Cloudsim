@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by sareh on 9/07/15.
  */
-public class Container {
+public class Container implements Comparable<Container> {
 
     /**
      * The id.
@@ -146,7 +146,7 @@ public class Container {
      */
     private double DestroyedTime;
     private double TotalCost;
-
+    private int AllocatedDataCenterId;
     public void setStartUpTime(double startUpTime) {
         this.StartUpTime = startUpTime;
     }
@@ -865,6 +865,15 @@ public class Container {
 
         //Log.printLine("Container: get Current totalRequestedMips"+ totalRequestedMips);
         return getWorkloadMips() * getNumberOfPes();
+    }
+
+
+    public void setDataCenterId(int x){AllocatedDataCenterId = x; }
+
+    public int getDataCenterId(){ return AllocatedDataCenterId; }
+
+    public int compareTo(Container o2) {
+        return id - o2.getId();
     }
 
 

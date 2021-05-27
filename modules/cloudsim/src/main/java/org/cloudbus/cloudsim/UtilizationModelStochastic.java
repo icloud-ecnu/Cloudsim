@@ -8,10 +8,7 @@
 
 package org.cloudbus.cloudsim;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -27,7 +24,7 @@ import java.util.Random;
  * Check the other classes to implement the same behavior
  * (that can be placed in the super class)
  */
-public class UtilizationModelStochastic implements UtilizationModel {
+public class UtilizationModelStochastic implements UtilizationModel, Serializable {
 
 	/** The random generator. */
 	private Random randomGenerator;

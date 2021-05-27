@@ -13,14 +13,14 @@ import java.util.*;
 
 public class UserSideBroker extends ContainerDatacenterBroker{
 
-    private Container const_container;
+    protected Container const_container;
     private double[] coordinate = new double[]{0, 0};
-    private int DatacenterStatusUpdateInterval;
-    private double LastUpdateTime = 0;
-    private boolean Status_stale = false;
-    private int SynchronizationCount = 0;
-    private int CurrentOptimalDatacenterId = -1;
-    private double CurrentDelay;
+    protected int DatacenterStatusUpdateInterval;      //数据中心更新连接时间间隔
+    protected double LastUpdateTime = 0;
+    protected boolean Status_stale = false;
+    protected int SynchronizationCount = 0;
+    protected int CurrentOptimalDatacenterId = -1;
+    protected double CurrentDelay;
 
     private ArrayList<SimEvent> SynchronizationList = new ArrayList<SimEvent>();
 
@@ -58,8 +58,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
                 processCloudletResubmit(ev);
                 break;
             case containerCloudSimTags.CLOUDLET_BINDING:
-                ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
-                sendNow(CurrentOptimalDatacenterId,containerCloudSimTags.CLOUDLET_BINDING, cl);
+                processCloudletBinding(ev);
                 break;
             case containerCloudSimTags.CONTAINER_SCALABILITY_SYNC:
                 ProcessContainerScalabilitySync(ev);
@@ -108,8 +107,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             if(clt.getContainerId() == -1){
                 if(CurrentOptimalDatacenterId == -1)
                     CurrentOptimalDatacenterId = getDatacenterIdsList().get(0);
-                Log.formatLine(Log.Opr.InterDatacenterAllocation, CloudSim.clock() + "Broker: cloudlet " + clt.getCloudletId()
-                                + " has not been bound. Communicate with datacenter " + CurrentOptimalDatacenterId);
+//                Log.formatLine(Log.Opr.InterDatacenterAllocation, CloudSim.clock() + "Broker: cloudlet " + clt.getCloudletId()
+//                                + " has not been bound. Communicate with datacenter " + CurrentOptimalDatacenterId);
                 send(getId(), clt.getExecStartTime(), containerCloudSimTags.CLOUDLET_BINDING, clt);
                 FailedSubmitted.add(clt);
             }
@@ -131,7 +130,8 @@ public class UserSideBroker extends ContainerDatacenterBroker{
     protected void processCloudletResubmit(SimEvent ev){
         ContainerCloudlet cl = (ContainerCloudlet)ev.getData();
         if(cl.containerId == -1) {
-            send(getId(), DatacenterStatusUpdateInterval, containerCloudSimTags.CLOUDLET_BINDING, cl);
+            sendNow(ev.getSource(), containerCloudSimTags.CONTAINER_SUBMIT);
+            send(getId(), CloudSim.getMinTimeBetweenEvents(), containerCloudSimTags.CLOUDLET_BINDING, cl);
 //            send(getDatacenterIdsList().get(0), DatacenterStatusUpdateInterval, containerCloudSimTags.SCALABILITY_CHECK, cl);
 //            Log.formatLine(Log.Opr.InterDatacenterAllocation, CloudSim.clock() + " Datacenter " + ev.getSource() + " has no left resources, waiting...");
         }
@@ -143,6 +143,10 @@ public class UserSideBroker extends ContainerDatacenterBroker{
         }
     }
 
+    protected void processCloudletBinding(SimEvent ev){
+        ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
+        sendNow(CurrentOptimalDatacenterId,containerCloudSimTags.CLOUDLET_BINDING, cl);
+    }
 
 
     protected void processDatacenterStatusUpdate(SimEvent ev){
@@ -282,6 +286,7 @@ public class UserSideBroker extends ContainerDatacenterBroker{
             Status_stale = false;
         }
     }
+
 
 
     protected void ProcessContainerScalabilityACK(SimEvent ev){

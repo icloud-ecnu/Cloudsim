@@ -3,20 +3,23 @@ package org.cloudbus.cloudsim.container.core;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.UtilizationModel;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by sareh on 10/07/15.
  */
-public class ContainerCloudlet extends Cloudlet {
+public class ContainerCloudlet extends Cloudlet  implements Comparable<ContainerCloudlet>, Serializable {
+    private static final long serialVersionUID = 42L;
+
     public int containerId = -1;
     private double DelayFactor = -1;
     private int hostId = -1;
     //chris tuning:
     //-----------------------------------------
     private double CallPositionX = -1, CallPositionY = -1;
-    private List<Integer> HistoricalHangOnTimeList ;
+    public List<Integer> HistoricalHangOnTimeList ;
 
     public void setCallPositionX(int x){CallPositionX = x;}
     public double getCallPositionX(){ return CallPositionX;}
@@ -26,6 +29,11 @@ public class ContainerCloudlet extends Cloudlet {
 
     public List<Integer> getHistoricalHangOnTimeList(){return HistoricalHangOnTimeList;}
     public void UpdateHistoricalHangOnTimeList(Integer x){HistoricalHangOnTimeList.add(x);}
+
+
+    public int compareTo(ContainerCloudlet x){
+        return getCloudletId() - x.getCloudletId();
+    }
 
     //-----------------------------------------
 
@@ -56,5 +64,17 @@ public class ContainerCloudlet extends Cloudlet {
         HistoricalHangOnTimeList = new ArrayList<Integer>();
     }
 
+
+/*    private double PredicConnectionDuration(ContainerCloudlet cl){
+
+        double a = 0;
+
+        for (int i = 0; i < HistoricalHangOnTimeList.size(); i++) {
+            News s = (News)list.get(i);
+            System.out.println(s.getId()+"  "+s.getTitle()+"  "+s.getAuthor());
+　　　　}
+
+        return a;
+    }*/
 
 }

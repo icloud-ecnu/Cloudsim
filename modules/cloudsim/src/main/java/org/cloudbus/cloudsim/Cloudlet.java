@@ -7,6 +7,7 @@
  */
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,7 +24,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
  * @since CloudSim Toolkit 1.0
  * @todo The documentation is wrong. Cloudlet isn't extending any class.
  */
-public class Cloudlet {
+public class Cloudlet implements  Serializable{
 
     /**
      * The cloudlet ID.
@@ -1633,5 +1634,6 @@ public class Cloudlet {
     public double getUtilizationOfBw(final double time) {
         return getUtilizationModelBw().getUtilization(time);
     }
+
 
 }

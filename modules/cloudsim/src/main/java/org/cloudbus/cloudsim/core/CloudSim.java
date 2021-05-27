@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.container.core.ContainerDatacenterBroker;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
@@ -66,7 +65,7 @@ public class CloudSim {
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = 0.01;
 
-	public static double shutdownTime = 0;
+	public static double shutdownTime = 24 * 60 * 60;
 
 	public static int LinearScaleUpNum = 30;
 
@@ -74,6 +73,33 @@ public class CloudSim {
 
 	public static double TransmissionWeight = 0.7;
 
+	public static  List<Integer> HistoricalContainerNumberInIntervals;
+
+	public static  List<List<Double>> IntervalcloudletX;
+
+	public static  List<Double> IntervalcloudletPredictX;
+
+	public static  List<Double> IntervalNumbers;
+
+	public static double mips = 10;
+
+	public static int CloudletPesNum = 8;
+
+	public static boolean initiative = true;
+
+	public static double ConvertLengthToTime(double length){
+		return length / (mips * CloudletPesNum);
+	}
+
+
+	public static String TimeFormat(double x){
+		int hour = (int) (x / (60 * 60));
+		int min = (int)((x % (60 * 60))  /  60);
+		int sec = (int)((x % (60 * 60))  %  60);
+		return Integer.toString(hour) + " : " + Integer.toString(min) + " : " +  Integer.toString(sec);
+	}
+
+//	public  static  XOR_using_NeuralNet xorUsingNeuralNet ;
 	/**
 	 * Initialises all the common attributes.
 	 * 
@@ -567,7 +593,6 @@ public class CloudSim {
 		} else {
 			queue_empty = true;
 			running = false;
-			shutdownTime = CloudSim.clock();
 			printMessage(CloudSim.clock()+": Simulation: No more future events");
 		}
 

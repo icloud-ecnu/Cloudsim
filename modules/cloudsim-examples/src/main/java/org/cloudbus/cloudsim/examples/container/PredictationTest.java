@@ -26,15 +26,14 @@ import org.cloudbus.cloudsim.container.vmSelectionPolicies.PowerContainerVmSelec
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
 import org.cloudbus.cloudsim.examples.JavaSwingTool.Draw;
+import org.cloudbus.cloudsim.examples.JavaSwingTool.DrawT;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
-
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 
 public class PredictationTest {
 
@@ -64,21 +63,28 @@ public class PredictationTest {
     private static int ContainerNumPerVm = 50;
     private static int CloudletNumPerContainer = 5;
     private static int CloudletPesNum = 8;
-//    private final static int CloudletPesNum = pesNumber / (ContainerNumPerVm * CloudletNumPerContainer);
 
-    public static double ConvertLengthToTime(double length){
-        return length / (mips * CloudletPesNum);
-    }
 
     //The variables in cloudLet distribution
     private static int terminated_time = 24 * 60 * 60;
     private static int interval_length = 1200;
-    private static int Poisson_lambda = 200;
-    private static int Gaussian_mean = 60000;
-    private static int Gaussian_var = 1000000;
+    private static int Poisson_lambda = 100;
+    private static int Gaussian_mean = 600;
+    private static int Gaussian_var = 100;
+
+
+    //Interval
+    private static List<Integer> HistoricalContainerNumberInIntervals = new ArrayList<Integer>();
+//    private  static  double IntervalTime = 0;
+//    private  static  double IntervalLength = 0;
+//    private  static  double IntervalVariance = 0;
+//    private  static  double IntervalAverageValue = 0;
+//    private  static  double IntervalIncrement = 0;
+//    private  static  double IntervalNumber = 0;
+//    public   static  List<List<Double>> IntervalcloudletX;
 
     //Standard terminal output redirection path setting.
-    private static String StdOutRedirectPath = "E://CloudSimOutput.txt";
+    private static String StdOutRedirectPath = "D://CloudSimOutput.txt";
 
     public static void main(String[] args) {
 
@@ -93,23 +99,25 @@ public class PredictationTest {
             int DatacenterNumber = 10;
             int HostNumber = DatacenterNumber * 20;
             int VmNumber = HostNumber;
-            int ContainerNumber = CloudSim.LinearScaleUpNum;
+            int ContainerNumber = 20;
             int num_user = 1;   // number of cloud users
             boolean trace_flag = false;  // mean trace events
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
             //set the viewable logs, convi
             Log.set_log_level(10);
-            Log.SetLogStdOut(Log.Opr.Base);
+//            Log.SetLogStdOut(Log.Opr.Base);
             Log.SetLogStdOut(Log.Opr.ScaleUp);
             Log.SetLogStdOut(Log.Opr.ScaleDown);
             Log.SetLogStdOut(Log.Opr.Synchronization);
             Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
             Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
             //Redirect the standard output to the specified file.
-//            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
-//            System.setOut(ps);
+            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
+            System.setOut(ps);
 
+            CloudSim.mips = mips;
+            CloudSim.CloudletPesNum = CloudletPesNum;
 
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
@@ -121,15 +129,6 @@ public class PredictationTest {
             broker = createBroker(overBookingFactor);
             int brokerId = broker.getId();
 
-            BaseRequestDistribution BaseDistribution = new BaseRequestDistribution(terminated_time, interval_length,
-                  Poisson_lambda, Gaussian_mean, Gaussian_var);
-            cloudlet2DXList = BaseDistribution.Get2DxWorkloads();
-            cloudletList = BaseDistribution.GetWorkloads();
-            Log.printLine(cloudletList.size());
-
-//            ContainerCloudlet res = cloudlet2DXList.get(0).get(0);
-//            for(int history_hangontime : res.getHistoricalHangOnTimeList())
-//                Log.printLine(history_hangontime);
             //create VMList, containerList.
             vmlist = new ArrayList<ContainerVm>();
             vmlist = createVmList(brokerId, VmNumber);
@@ -159,35 +158,107 @@ public class PredictationTest {
                         location);
                 datacenterList.add(e1);
             }
-
-            IntervalDatacenterList = new ArrayList<Map<Integer, Double>>();
-            cloudletList = SimulateServalDays(cloudlet2DXList, 100);
-            Log.printLine(cloudletList.size());
-            broker.setIntervalDataCenters(IntervalDatacenterList);
             broker.submitVmList(vmlist);
             broker.submitContainerList(containerlist);
-
 
             //Initialize the request distribution by setting the IntervalLength and some other parameters.
             Draw ex = new Draw(mips, CloudletPesNum);
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
+            ex.setInputDataPanel(self_design_distribution);
+            GenerateSimulationData(100);
+            //read cloudletList from the file.
+            FileInputStream fin = new FileInputStream("./submitCloudLetList.txt");
+            ObjectInputStream sin = new ObjectInputStream(fin);
+            Object obj = sin.readObject();
+            cloudletList = (List<ContainerCloudlet>)obj;
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
                 Log.formatLine(Log.Opr.Base, "Initialization: cloudlet id: " + cl.getCloudletId()
                         + " length is " + cl.getCloudletLength());
             }
-            ex.setInputDataPanel(self_design_distribution);
+            sin.close();
+            Log.printLine("Broker: Submit " + cloudletList.size() + " cloudLets.");
             broker.submitCloudletList(cloudletList);
+
+            //read intervalDatacenterList from one file and sync to the broker.
+            ObjectInputStream sin1 = new ObjectInputStream( new FileInputStream("./intervalDatacenterList.txt"));
+            IntervalDatacenterList = (List<Map<Integer, Double>>) sin1.readObject();
+            broker.setIntervalDataCenters(IntervalDatacenterList);
+
+            //whether to apply our strategy.
+            CloudSim.initiative = true;
             CloudSim.startSimulation();
             //calculate the total cost.
-            printContainerList(UserSideDatacenter.AllContainers);
+            List<Container> res = UserSideDatacenter.AllContainers;
+            printContainerList(res);
+            //这里是处理容器列表信息的代码。
+            class containerEvent implements Comparable<containerEvent>{
+                double eventTime;
+                int eventTag; //1代表创建，-1代表销毁
+                int datacenterId;
+                containerEvent(double eventTime, int eventTag, int datacenterId){
+                    this.eventTime = eventTime;
+                    this.eventTag = eventTag;
+                    this.datacenterId = datacenterId;
+                }
+                @Override
+                public int compareTo(containerEvent o) {
+                    if(this.eventTime == o.eventTime)
+                        return 0;
+                    else
+                        return this.eventTime < o.eventTime ? -1: 1;
+                }
+            }
+            Map<Integer, List<containerEvent>> DataCenterEventList = new HashMap<Integer, List<containerEvent>>();
+            List<containerEvent> eventList = new ArrayList<containerEvent>();
+            for(Container con : res){
+                containerEvent create = new containerEvent(con.getStartUpTime(), 1, con.getDataCenterId());
+                containerEvent destroy = new containerEvent(con.getDestroyedTime(), -1, con.getDataCenterId());
+                eventList.add(create);
+                eventList.add(destroy);
+            }
+            Collections.sort(eventList);
+            for(containerEvent e : eventList){
+                if(DataCenterEventList.get(e.datacenterId) == null){
+                    List<containerEvent> tmp = new ArrayList<containerEvent>();
+                    tmp.add(e);
+                    DataCenterEventList.put(e.datacenterId, tmp);
+                }
+                else{
+                    DataCenterEventList.get(e.datacenterId).add(e);
+                }
+            }
+            //第一层是数据中心id, 第二层是各个时间点对应的容器数量，map是无序的，如果需要排序可以将keyset提出来排序之后访问map获取值。
+            Map<Integer, Map<Double, Integer>> DataCenterSeries = new HashMap<Integer, Map<Double, Integer>>();
+            for (Map.Entry<Integer, List<containerEvent>> entry : DataCenterEventList.entrySet()) {
+                int datacenterId = entry.getKey();
+                Map<Double, Integer> TimeToContainerNumber = new HashMap<Double, Integer>();
+                List<containerEvent> events = entry.getValue();
+                int accumulated_number = 0;
+                for(containerEvent e : events){
+                        accumulated_number = accumulated_number + e.eventTag;
+                        TimeToContainerNumber.put(e.eventTime, accumulated_number);
+                }
+                DataCenterSeries.put(datacenterId, TimeToContainerNumber);
+            }
+
+
+            //传DataCenterSeries进去   <Integer, Map<Double, Integer>>
+
+            DrawT drawT = new DrawT();
+            drawT.setInputDataPanel(DataCenterSeries);   //重中之重要改
+            drawT.setVisible(true);
+
+
             List<ContainerCloudlet> newList = broker.getCloudletReceivedList();
             printCloudletList(newList);
             CloudSim.stopSimulation();
             Log.printLine("Cost: " +  UserSideDatacenter.TotalContainerCost);
             Log.printLine("Interval Scale Up Test finished!");
+
+            drawT.setResultPanel(newList);   //画图输出结果
             ex.setResultPanel(newList);
             // visualize the raw data
             EventQueue.invokeLater(() -> {
@@ -209,15 +280,54 @@ public class PredictationTest {
             Log.printLine("The simulation has been terminated due to an unexpected error");
         }
     }
+//================================================往下是具体操作=================================================
 
 
-    private static List<ContainerCloudlet> SimulateServalDays(List<List<ContainerCloudlet>> workloads, int Days){
+
+    private static void GenerateSimulationData(int Days) {
+        //先生成一天的分布，
+        try{
+            BaseRequestDistribution BaseDistribution = new BaseRequestDistribution(terminated_time, interval_length,
+                    Poisson_lambda, Gaussian_mean, Gaussian_var);
+            cloudlet2DXList = BaseDistribution.Get2DxWorkloads();    //这个就是获取上面的BaseDistribution这个对象里，的一天的每个时间段的二维list
+            cloudletList = BaseDistribution.GetWorkloads();      //这个就是一天所有的连接
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            Log.printLine("The fundamental data generation error.");
+        }
+
+        //Generate rational historical data.
+        IntervalDatacenterList = new ArrayList<Map<Integer, Double>>();
+        //In this simulation, the intervalDatacenterList will be formed completely.
+        cloudletList = SimulateServalDays(cloudlet2DXList, 100);
+        broker.setIntervalDataCenters(IntervalDatacenterList);
+        try {
+            FileOutputStream fout0 = new FileOutputStream("./intervalDatacenterList.txt");
+            ObjectOutputStream sout0 = new ObjectOutputStream(fout0);
+            sout0.writeObject(IntervalDatacenterList);
+            sout0.flush();
+            sout0.close();
+            FileOutputStream fout = new FileOutputStream("./submitCloudLetList.txt");
+            ObjectOutputStream sout = new ObjectOutputStream(fout);
+            sout.writeObject(cloudletList);
+            sout.flush();
+            sout.close();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            Log.printLine("File stdout error.");
+        }
+    }
+
+    private static List<ContainerCloudlet> SimulateServalDays(List<List<ContainerCloudlet>> workloads, int Days){    // workloads = cloudlet2DXList 二维的每个时间段的，每个连接数
         /*
         TWO GOALS:
             1. select three optimal DataCenters for each interval
             2. Generate data for some days and choose the ToSubmitCloudLetList
+            3. train
         */
-        //To select three optimal DataCenters in each interval, we employ the naive statistics by comparing frequency
+        //1.To select three optimal DataCenters in each interval, we employ the naive statistics by comparing frequency
         for(List<ContainerCloudlet> IntervalWorkloads : workloads){
             List<Integer> DatacenterChosenTime = new ArrayList<Integer>(workloads.size());
             for(int i = 0; i < datacenterList.size() * 2; i++)DatacenterChosenTime.add(0);
@@ -225,8 +335,8 @@ public class PredictationTest {
                 double minDistance = Double.POSITIVE_INFINITY;
                 int OptimalDatacenterID = -1;
                 for(UserSideDatacenter d : datacenterList){
-                    int diffX = (int)(connection.getCallPositionX() - d.getLocation()[0]);
-                    int diffY = (int)(connection.getCallPositionY() - d.getLocation()[1]);
+                    int diffX = (int)(connection.getCallPositionX() - UserSideDatacenter.getLocationById(d.getId())[0]);
+                    int diffY = (int)(connection.getCallPositionY() - UserSideDatacenter.getLocationById(d.getId())[1]);
                     double CurDistance = Math.sqrt(diffX * diffX + diffY * diffY);
                     if(CurDistance < minDistance){
                         minDistance = CurDistance;
@@ -253,10 +363,11 @@ public class PredictationTest {
                     IntervalBackUpDataCenters.put(OptimalId, 1.0 * DatacenterChosenTime.get(OptimalId) / IntervalWorkloads.size());
                 DatacenterChosenTime.set(OptimalId, 0); //remove the optimal datacenter to find the suboptimal one.
             }
-            IntervalDatacenterList.add(IntervalBackUpDataCenters);
+            IntervalDatacenterList.add(IntervalBackUpDataCenters);  //选取了3个数据中心
         }
 
-        List <ContainerCloudlet> ToSubmitCloudletsList = new ArrayList<ContainerCloudlet>();
+        //2.
+        List <ContainerCloudlet> ToSubmitCloudletsList = new ArrayList<ContainerCloudlet>(); //
         for(int i = 0;  i < Days; i++){
             ToSubmitCloudletsList.clear();
             Random RandForNumber = new Random();
@@ -267,32 +378,108 @@ public class PredictationTest {
             2. The HangOnTime for one specific user (CloudLet) obeys a normal distribution.
                 mean: generated by base distribution var default: 30
              */
-            for(int j = 0; j < workloads.size(); j++){
+            for(int j = 0; j < workloads.size(); j++){   //workloads = cloudlet2Dlist
                 List<ContainerCloudlet> ConnectionInOneInterval = workloads.get(j);
                 int len = ConnectionInOneInterval.size();
-                int select = len / 3 + (int)(RandForNumber.nextGaussian() * Math.sqrt(100)), remaining = len;
-                Random randForSelection = new Random();
-                Random randForGaussian = new Random();
-                for (int k = 0; k < len; k++) {
-                    if (randForSelection.nextInt(len) % remaining < select) {
-                        //select one connection and reassign the CloudLet length.
-                        ContainerCloudlet x = ConnectionInOneInterval.get(k);
-                        int mean = x.getHistoricalHangOnTimeList().get(0);
-                        double variance = 30;
-                        int NewHangOnTime = (int)(randForGaussian.nextGaussian() * Math.sqrt(variance) + mean);
-                        x.UpdateHistoricalHangOnTimeList(NewHangOnTime);
-                        x.setCloudletLength(NewHangOnTime * mips * CloudletPesNum);
-                        ToSubmitCloudletsList.add(x);
-                        select--;
+                int select = len / 2 + (int)(RandForNumber.nextGaussian() * Math.sqrt(Gaussian_var)), remaining = len;
+                if(select <= 0) {
+                    HistoricalContainerNumberInIntervals.add(0);
+                    continue;
+                }
+                else{
+                    HistoricalContainerNumberInIntervals.add(select / 4 + 1 );
+                    Random randForSelection = new Random();
+                    Random randForGaussian = new Random();
+                    for (int k = 0; k < len; k++) {
+                        if (randForSelection.nextInt(len) % remaining < select) {
+                            //select one connection and reassign the CloudLet length.
+                            ContainerCloudlet x = ConnectionInOneInterval.get(k);
+                            int mean = x.getHistoricalHangOnTimeList().get(0);
+                            double variance = 30;
+                            int NewHangOnTime = (int)(randForGaussian.nextGaussian() * Math.sqrt(variance) + mean);
+                            x.UpdateHistoricalHangOnTimeList(NewHangOnTime);
+                            x.setCloudletLength(NewHangOnTime * mips * CloudletPesNum);
+                            ToSubmitCloudletsList.add(x);
+                            select--;
+                        }
+                        remaining--;
                     }
-                    remaining--;
                 }
             }
         }
+
+        /*
+         Goal 3: store the historical cloudLet number for each interval in cloudsim for prediction.
+         */
+
+        CloudSim.HistoricalContainerNumberInIntervals = HistoricalContainerNumberInIntervals;
+
+
+
+        //3.
+        //====================================================================================================================
+        //sunda-test
+        //前两天的数据进行train
+//
+//        List<Double> cloudletIntervalList = new ArrayList<Double>();
+//        for(int i = 0 ; i < workloads.size() ; i++ ){
+//            List<ContainerCloudlet> TmpcloudletIntervalList = workloads.get(i);
+//            IntervalNumber = TmpcloudletIntervalList.size();
+//            //求均值
+//            for(ContainerCloudlet cl : TmpcloudletIntervalList){
+//                IntervalLength = cl.getCloudletLength();
+//                IntervalAverageValue+=IntervalLength;
+//
+//            }
+//
+//            IntervalAverageValue = IntervalAverageValue / IntervalNumber;
+//            //求方差
+//            for(ContainerCloudlet cl : TmpcloudletIntervalList){
+//                IntervalLength = cl.getCloudletLength();
+//                IntervalVariance = (IntervalLength - IntervalAverageValue) *(IntervalLength +IntervalAverageValue);
+//            }
+//            IntervalVariance = IntervalVariance/IntervalNumber;
+//            //增量
+//            int j=0;
+//            if(j<=workloads.size()){
+//                IntervalIncrement = workloads.get(j+1).size() - workloads.get(j).size();
+//            }
+//
+//
+//            cloudletIntervalList.add(IntervalTime);   IntervalTime += 20;
+//            cloudletIntervalList.add(IntervalVariance);
+//            cloudletIntervalList.add(IntervalAverageValue);
+//            cloudletIntervalList.add(IntervalIncrement);
+//            if (i==workloads.size()-1){   //每天的最后一组数据作为输出
+//                CloudSim.IntervalcloudletPredictX.add(IntervalTime);
+//                CloudSim.IntervalcloudletPredictX.add(IntervalVariance);
+//                CloudSim.IntervalcloudletPredictX.add(IntervalAverageValue);
+//                CloudSim.IntervalcloudletPredictX.add(IntervalIncrement);
+//            }else {
+//                CloudSim.IntervalcloudletX.add(cloudletIntervalList);          //把每天的最后一组数据拿出来，做下一轮的预测
+//            }
+//
+//            CloudSim.IntervalNumbers.add(IntervalNumber);  //每个阶段的连接数
+//
+//        }
+
+/*        XOR_using_NeuralNet xorUsingNeuralNet = new XOR_using_NeuralNet();
+          xorUsingNeuralNet.initNeuralNet();
+          xorUsingNeuralNet.train(CloudSim.IntervalcloudletX ,CloudSim.IntervalNumbers );
+          double number = 0;
+          number = xorUsingNeuralNet.interrogate(CloudSim.IntervalcloudletPredictX);*/
+
+//        XOR_using_NeuralNet xorUsingNeuralNet = new XOR_using_NeuralNet();
+//        CloudSim.xorUsingNeuralNet.initNeuralNet();
+//        CloudSim.xorUsingNeuralNet.train(CloudSim.IntervalcloudletX ,CloudSim.IntervalNumbers );
+ /*       double number = 0;
+          number = CloudSim.xorUsingNeuralNet.interrogate(CloudSim.IntervalcloudletPredictX);*/
+
+//====================================================================================================================
         return ToSubmitCloudletsList;
     }
 
-
+  //
 
 
     private static String getExperimentName(String... args) {
@@ -418,35 +605,30 @@ public class PredictationTest {
 
 
     private static void printContainerList(List<Container> list) {
-        List<Container> UnRemovedList = broker.getContainersCreatedList();
-        for(int i = 0; i < UnRemovedList.size(); i++){
-            Container con = UnRemovedList.get(i);
-            con.setDestroyedTime(CloudSim.shutdownTime);
-            con.setTotalCost((CloudSim.shutdownTime- con.getStartUpTime()) *  3.0D);
-            list.add(con);
-        }
         int size = list.size();
+        Collections.sort(list);
         String indent = "    ";
         Log.printLine();
         Log.printLine("==========CONTAINER INFO OUTPUT ==========");
-        Log.printLine("Size: " + size);
-        Log.printLine("Container ID" + indent  + " StartUpTime" + indent + "DestroyedTime" + indent + "Cost");
+        Log.printLine("Container ID" + indent  + "DataCenter ID" + " StartUpTime" + indent + "DestroyedTime" + indent + "Cost");
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
             Container con = list.get(i);
             Log.printLine(String.format(indent + con.getId()
+                    + indent +indent + dft.format(con.getDataCenterId())
                     + indent + indent + dft.format(con.getStartUpTime())
                     + indent + indent + dft.format(con.getDestroyedTime())
                     + indent + indent + dft.format(con.getTotalCost()))
             );
         }
-
+        Log.printLine("Size: " + size);
         Log.printLine(String.format("=======TOTAL COST=======\nFor container resources is: " + UserSideDatacenter.TotalContainerCost));
 
     }
 
     private static void printCloudletList(List<ContainerCloudlet> list) {
         int size = list.size();
+        Collections.sort(list);
         Log.printLine();
         Log.printLine("========== OUTPUT ==========");
         Log.printLine("The cloulet size is:" + size);
@@ -462,7 +644,7 @@ public class PredictationTest {
                 + "Finish Time" + indent
                 + "Delay Factor");
         //key: datacenterId   value:cloudlet number
-
+        double total_delay = 0, cnt = 0;
         Map<Integer, Map<Integer, Integer>> Load = new HashMap<Integer, Map<Integer, Integer>>();
         DecimalFormat dft = new DecimalFormat("###.##");
         for (int i = 0; i < size; i++) {
@@ -491,8 +673,11 @@ public class PredictationTest {
                         + dft.format(cloudlet.getFinishTime())
                         + indent + indent
                         + dft.format(cloudlet.getDelayFactor())));
+                total_delay += cloudlet.getDelayFactor();
+                cnt++;
             }
         }
+        Log.printLine("======The average delay is: " + (total_delay / cnt));
 
         for (Integer key : Load.keySet()) {
             Log.printLine();
@@ -506,7 +691,7 @@ public class PredictationTest {
         }
 
         for(UserSideDatacenter d : datacenterList){
-            double[] pos = d.getLocation();
+            double[] pos = UserSideDatacenter.getLocationById(d.getId());;
             Log.printLine("Datacenter id: " + d.getId() + "  Pos: (" + pos[0] + ", " + pos[1] + ")");
         }
 

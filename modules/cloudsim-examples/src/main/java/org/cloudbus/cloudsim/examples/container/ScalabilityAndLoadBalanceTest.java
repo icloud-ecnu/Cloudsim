@@ -72,6 +72,16 @@ public class ScalabilityAndLoadBalanceTest {
     private static int Gaussian_mean = 60000;
     private static int Gaussian_var = 1000000;
 
+
+
+    //interval cloudlet information
+/*    private  static  double IntervalTime = 0;
+    private  static  double IntervalLength = 0;
+    private  static  double IntervalVariance = 0;
+    private  static  double IntervalAverageValue = 0;
+    private  static  double IntervalIncrement = 0;*/
+
+
     //Standard terminal output redirection path setting.
     private static String StdOutRedirectPath = "E://CloudSimOutput.txt";
 
@@ -94,18 +104,19 @@ public class ScalabilityAndLoadBalanceTest {
             String logAddress = "~/Results";
             local_characteristics = new HashMap<Integer, ContainerDatacenterCharacteristics>();
             //set the viewable logs, convi
-            Log.set_log_level(10);
-            Log.SetLogStdOut(Log.Opr.Base);
-            Log.SetLogStdOut(Log.Opr.ScaleUp);
-            Log.SetLogStdOut(Log.Opr.ScaleDown);
-            Log.SetLogStdOut(Log.Opr.Synchronization);
-            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
-            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
-            //Redirect the standard output to the specified file.
-//            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
-//            System.setOut(ps);
+//            Log.set_log_level(10);
+//            Log.SetLogStdOut(Log.Opr.Base);
+//            Log.SetLogStdOut(Log.Opr.ScaleUp);
+//            Log.SetLogStdOut(Log.Opr.ScaleDown);
+//            Log.SetLogStdOut(Log.Opr.Synchronization);
+//            Log.SetLogStdOut(Log.Opr.InterDatacenterAllocation);
+//            Log.SetLogStdOut(Log.Opr.InnerDatacenterAllocation);
+//            Redirect the standard output to the specified file.
+            PrintStream ps=new PrintStream(new FileOutputStream(StdOutRedirectPath));
+            System.setOut(ps);
 
-
+            CloudSim.LoadBalanceWeight = 0.3;
+            CloudSim.TransmissionWeight = 0.7;
             Calendar calendar = Calendar.getInstance();
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
@@ -156,14 +167,19 @@ public class ScalabilityAndLoadBalanceTest {
             Draw ex = new Draw(mips, CloudletPesNum);
             BaseRequestDistribution self_design_distribution = new BaseRequestDistribution(terminated_time, interval_length,
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
-            cloudletList = self_design_distribution.GetWorkloads();
+            cloudletList = self_design_distribution.GetWorkloads(); //GetWorkloads()获取cloudletlist
             for(ContainerCloudlet cl : cloudletList){
                 cl.setUserId(brokerId);
                 Log.formatLine(Log.Opr.Base, "Initialization: cloudlet id: " + cl.getCloudletId()
                         + " length is " + cl.getCloudletLength());
             }
             ex.setInputDataPanel(self_design_distribution);
-            broker.submitCloudletList(cloudletList);
+
+
+//            XOR_using_NeuralNet;
+            //在这里将模型train一下。整理前两天的数据，
+            // 需要整理今天的数据，把每个interval的信息放在一个cloudsim这个类的static变量，第n个放的是第n-1
+            broker.submitCloudletList(cloudletList);   //截取，
 
 
             CloudSim.startSimulation();
@@ -409,7 +425,7 @@ public class ScalabilityAndLoadBalanceTest {
         }
 
         for(UserSideDatacenter d : datacenterList){
-            double[] pos = d.getLocation();
+            double[] pos = UserSideDatacenter.getLocationById(d.getId());
             Log.printLine("Datacenter id: " + d.getId() + "  Pos: (" + pos[0] + ", " + pos[1] + ")");
         }
 

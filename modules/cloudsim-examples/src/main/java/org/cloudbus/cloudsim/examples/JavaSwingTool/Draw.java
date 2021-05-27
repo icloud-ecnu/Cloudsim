@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.examples.JavaSwingTool;
 
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.container.core.ContainerCloudlet;
+import org.cloudbus.cloudsim.container.core.UserSideDatacenter;
 import org.cloudbus.cloudsim.examples.CloudletRequestDistribution.BaseRequestDistribution;
 import org.cloudbus.cloudsim.examples.container.ConstantsExamples;
 import org.jfree.chart.ChartFactory;
@@ -40,8 +41,6 @@ import org.jfree.chart.plot.XYPlot;
 import javax.swing.border.EmptyBorder;
 
 
-
-
 public class Draw extends JFrame{
     private JTabbedPane tabPane ;
     private int mips = 10;
@@ -68,10 +67,6 @@ public class Draw extends JFrame{
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
-
-
-
-
 
 
     /**
@@ -113,20 +108,27 @@ public class Draw extends JFrame{
      * Create the result panel.
      */
     public CustomPanel createResultPanel(List<ContainerCloudlet> resultCloudletList) {
-        CustomPanel panel = new CustomPanel(new GridLayout(2, 1));
+        CustomPanel panel = new CustomPanel(new GridLayout(3, 1));
         CustomPanel field1 = new CustomPanel(new GridLayout(1, 2));
         JFreeChart chart1 = createDelayChartOfCDF(resultCloudletList);
         JFreeChart chart2 = createDelayChartOfDistribution(resultCloudletList);
-
         field1.add((Component)new ChartPanel(chart1, false));
         field1.add((Component)new ChartPanel(chart2, false));
-
-
         panel.add(field1);
-
         JScrollPane field2 = createResultTable(resultCloudletList);
+        JScrollPane field3 = createCostTable();
         panel.add(field2);
+        panel.add(field3);
         return panel;
+    }
+
+    private JScrollPane createCostTable(){
+        Object[][] tableData = {
+                new Object[]{"Cost" , UserSideDatacenter.TotalContainerCost},
+        };
+        Object[] columnTitle = {"" , "Total cost"};
+        JTable table = new JTable(tableData , columnTitle);
+        return new JScrollPane(table);
     }
 
     private JScrollPane createResultTable(List<ContainerCloudlet> resultCloudletList) {
@@ -142,13 +144,15 @@ public class Draw extends JFrame{
         }
         //定义二维数组作为表格数据
         Object[][] tableData = {
-                new Object[]{"Delay Factor" , min_value , max_value, total_value / length},
+                new Object[]{"Delay Factor" , length, min_value , max_value, total_value / length},
         };
         //定义一维数据作为列标题
-        Object[] columnTitle = {"" , "Min" , "Max", "Avg"};
+        Object[] columnTitle = {"" , "CloudLet number", "Min" , "Max", "Avg"};
         JTable table = new JTable(tableData , columnTitle);
         return new JScrollPane(table);
     }
+
+
 
     private JFreeChart createDelayChartOfDistribution(List<ContainerCloudlet> resultCloudletList) {
         int length = resultCloudletList.size();
