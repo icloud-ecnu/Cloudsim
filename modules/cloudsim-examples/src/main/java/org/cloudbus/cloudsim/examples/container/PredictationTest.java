@@ -167,28 +167,15 @@ public class PredictationTest {
                     Poisson_lambda, Gaussian_mean, Gaussian_var);
             cloudletList = self_design_distribution.GetWorkloads();
             ex.setInputDataPanel(self_design_distribution);
-            GenerateSimulationData(100);
-            //read cloudletList from the file.
-            FileInputStream fin = new FileInputStream("./submitCloudLetList.txt");
-            ObjectInputStream sin = new ObjectInputStream(fin);
-            Object obj = sin.readObject();
-            cloudletList = (List<ContainerCloudlet>)obj;
-            for(ContainerCloudlet cl : cloudletList){
-                cl.setUserId(brokerId);
-                Log.formatLine(Log.Opr.Base, "Initialization: cloudlet id: " + cl.getCloudletId()
-                        + " length is " + cl.getCloudletLength());
-            }
-            sin.close();
-            Log.printLine("Broker: Submit " + cloudletList.size() + " cloudLets.");
-            broker.submitCloudletList(cloudletList);
 
-            //read intervalDatacenterList from one file and sync to the broker.
-            ObjectInputStream sin1 = new ObjectInputStream( new FileInputStream("./intervalDatacenterList.txt"));
-            IntervalDatacenterList = (List<Map<Integer, Double>>) sin1.readObject();
-            broker.setIntervalDataCenters(IntervalDatacenterList);
+
+            //firstly used for generate simulation data.
+//            GenerateSimulationData(100);
+            ReadDataFromFiles();
+
 
             //whether to apply our strategy.
-            CloudSim.initiative = true;
+            CloudSim.initiative = false ;
             CloudSim.startSimulation();
             //calculate the total cost.
             List<Container> res = UserSideDatacenter.AllContainers;
@@ -283,6 +270,35 @@ public class PredictationTest {
 //================================================往下是具体操作=================================================
 
 
+    private static void ReadDataFromFiles(){
+        try{
+            FileInputStream fin = new FileInputStream("./submitCloudLetList.txt");
+            ObjectInputStream sin = new ObjectInputStream(fin);
+            Object obj = sin.readObject();
+            cloudletList = (List<ContainerCloudlet>)obj;
+            for(ContainerCloudlet cl : cloudletList){
+                cl.setUserId(broker.getId());
+                Log.formatLine(Log.Opr.Base, "Initialization: cloudlet id: " + cl.getCloudletId()
+                        + " length is " + cl.getCloudletLength());
+            }
+            sin.close();
+            Log.printLine("Broker: Submit " + cloudletList.size() + " cloudLets.");
+            broker.submitCloudletList(cloudletList);
+
+            //read intervalDatacenterList from one file and sync to the broker.
+            ObjectInputStream sin1 = new ObjectInputStream( new FileInputStream("./intervalDatacenterList.txt"));
+            IntervalDatacenterList = (List<Map<Integer, Double>>) sin1.readObject();
+            broker.setIntervalDataCenters(IntervalDatacenterList);
+
+            ObjectInputStream sin2 = new ObjectInputStream( new FileInputStream("./ContainerNumberInIntervals.txt"));
+            HistoricalContainerNumberInIntervals = (List<Integer>) sin2.readObject();
+            CloudSim.HistoricalContainerNumberInIntervals = HistoricalContainerNumberInIntervals;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            Log.printLine("File read occurs error.");
+        }
+    }
 
     private static void GenerateSimulationData(int Days) {
         //先生成一天的分布，
@@ -308,11 +324,17 @@ public class PredictationTest {
             sout0.writeObject(IntervalDatacenterList);
             sout0.flush();
             sout0.close();
-            FileOutputStream fout = new FileOutputStream("./submitCloudLetList.txt");
-            ObjectOutputStream sout = new ObjectOutputStream(fout);
+            FileOutputStream fout1 = new FileOutputStream("./submitCloudLetList.txt");
+            ObjectOutputStream sout = new ObjectOutputStream(fout1);
             sout.writeObject(cloudletList);
             sout.flush();
             sout.close();
+
+            FileOutputStream fout2 = new FileOutputStream("./ContainerNumberInIntervals.txt");
+            ObjectOutputStream sout2 = new ObjectOutputStream(fout2);
+            sout2.writeObject(HistoricalContainerNumberInIntervals);
+            sout2.flush();
+            sout2.close();
         }
         catch (Exception e) {
             e.printStackTrace();
