@@ -443,87 +443,18 @@ public class ContainerDatacenterBroker extends SimEntity {
         int containerIndex = 0;
         List<ContainerCloudlet> successfullySubmitted = new ArrayList<>();
         for (ContainerCloudlet cloudlet : getCloudletList()) {
-            //Log.printLine("Containers Created" + getContainersCreated());
             if (containerIndex < getContainersCreated()) {
-                //Log.printLine("Container Index" + containerIndex);
-//                    int containerId = getContainersCreatedList().get(containerIndex).getId();
-//                    bindCloudletToContainer(cloudlet.getCloudletId(), containerId);
                 if(getContainersToVmsMap().get(cloudlet.getContainerId()) != null) {
                     int vmId = getContainersToVmsMap().get(cloudlet.getContainerId());
-//                    bindCloudletToVm(cloudlet.getCloudletId(), vmId);
                     cloudlet.setVmId(vmId);
-//                    if(cloudlet.getVmId() != vmId){
-//                        Log.printConcatLine("The cloudlet Vm Id is ", cloudlet.getVmId(), "It should be", vmId);
-//
-//                    }
                     containerIndex++;
                     sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
                     cloudletsSubmitted++;
                     getCloudletSubmittedList().add(cloudlet);
                     successfullySubmitted.add(cloudlet);
                 }
-
-
-                //Log.printLine("Container Id" + containerId);
-
-                //Log.printConcatLine("VM ID is: ",cloudlet.getVmId(), "Container ID:", cloudlet.getContainerId(), "cloudletId:", cloudlet.getCloudletId());
-
-//                cloudlet.setVmId(v.getId());
-                // if user didn't bind this cloudlet and it has not been executed yet
-//            if (cloudlet.getContainerId() == -1) {
-//                Log.print("User has forgotten to bound the cloudlet to container");
-//            } else { // submit to the specific vm
-//                vm = ContainerVmList.getById(getVmsCreatedList(), cloudlet.getVmId());
-//                if (vm == null) { // vm was not created
-//                    if (!Log.isDisabled()) {
-//                        Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
-//                                cloudlet.getCloudletId(), ": bount VM not available");
-//                    }
-//                    continue;
-//                }
-//            }
-//
-//            if (!Log.isDisabled()) {
-//                Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Sending cloudlet ",
-//                        cloudlet.getCloudletId(), " to VM #", cloudlet.getContainerId());
-//            }
-
-
-//            containerIndex = (containerIndex + 1) % getVmsCreatedList().size();
-
-//          int vmIndex = 0;
-//        List<ContainerCloudlet> successfullySubmitted = new ArrayList<ContainerCloudlet>();
-//        for (ContainerCloudlet cloudlet : getCloudletList()) {
-//            ContainerVm vm;
-//            // if user didn't bind this cloudlet and it has not been executed yet
-//            if (cloudlet.getVmId() == -1) {
-//                vm = getVmsCreatedList().get(vmIndex);
-//            } else { // submit to the specific vm
-//                vm = ContainerVmList.getById(getVmsCreatedList(), cloudlet.getVmId());
-//                if (vm == null) { // vm was not created
-//                    if (!Log.isDisabled()) {
-//                        Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
-//                                cloudlet.getCloudletId(), ": bount VM not available");
-//                    }
-//                    continue;
-//                }
-//            }
-//
-//            if (!Log.isDisabled()) {cloudlet.getCloudletId()
-//                Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Sending cloudlet ",
-//                        cloudlet.getCloudletId(), " to VM #", vm.getId());
-//            }
-//
-//            cloudlet.setVmId(vm.getId());
-//            sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
-//            cloudletsSubmitted++;
-//            vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
-//            getCloudletSubmittedList().add(cloudlet);
-//            successfullySubmitted.add(cloudlet);
             }
         }
-
-        // remove submitted cloudlets from waiting list
         getCloudletList().removeAll(successfullySubmitted);
         successfullySubmitted.clear();
     }

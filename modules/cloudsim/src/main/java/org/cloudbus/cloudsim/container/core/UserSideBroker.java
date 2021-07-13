@@ -272,7 +272,6 @@ public class UserSideBroker extends ContainerDatacenterBroker{
 
 
     public void ProcessContainerScalabilitySync(SimEvent ev){
-        //check the datacenter status whether to modify
         if(CloudSim.clock() > LastUpdateTime + DatacenterStatusUpdateInterval)
             Status_stale = true;
         if(Status_stale) {

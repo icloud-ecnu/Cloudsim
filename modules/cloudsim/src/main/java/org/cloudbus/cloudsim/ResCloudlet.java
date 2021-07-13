@@ -436,7 +436,7 @@ public class ResCloudlet {
 	 * @pre $none
 	 * @post $result >= 0
 	 */
-	public long getRemainingCloudletLength() {
+	public long getRemainingCloudletLength() {//显示获取此任务的总体时长，，乘以1000000，再减去任务还有多少没有跑完
 		long length = cloudlet.getCloudletTotalLength() * Consts.MILLION - cloudletFinishedSoFar;
 
 		// Remaining Cloudlet length can't be negative number.
@@ -446,6 +446,11 @@ public class ResCloudlet {
 
 		return (long) Math.floor(length / Consts.MILLION);
 	}
+
+
+
+
+
 
 	/**
 	 * Finalizes all relevant information before <tt>exiting</tt> the CloudResource entity. This

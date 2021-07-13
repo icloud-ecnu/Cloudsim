@@ -51,7 +51,10 @@ public class UserSideBrokerAdvance extends UserSideBroker{
             IntervalDataCentersIndex++;
             int IntervalContainerNumber = 0;//passive extension method.
             if(CloudSim.initiative)
-                IntervalContainerNumber =  predictContainerNumber(IntervalDataCentersIndex);
+                IntervalContainerNumber =  (int) (predictContainerNumber(IntervalDataCentersIndex) * 1.5);
+
+            //控制弹性变量开关，0为无弹性，注释掉此语句为使用本系统自动弹性扩容方案，给与定值为手动定值弹性扩容
+//            IntervalContainerNumber = 0;
 
             Log.printLine(CloudSim.TimeFormat(CloudSim.clock())+ " Broker: Interval " + IntervalDataCentersIndex + " begins.");
             Map<Integer, Double> ThisIntervalDataCenters = IntervalDataCenterList.get(IntervalDataCentersIndex % 72);
@@ -81,10 +84,11 @@ public class UserSideBrokerAdvance extends UserSideBroker{
             thisIntervalNumber.add(history.get(i));
         }
         int res = 0;
-        for(int i = thisIntervalNumber.size() - 1, j = 0; j < 10; j++, i--){
+        for(int i = thisIntervalNumber.size() - 1, j = 0; j < 30; j++, i--){
             res += thisIntervalNumber.get(i);
         }
-        return res / 10;
+
+        return (res / 30) / 4;
     }
 
     protected void CreateOneContainerInDatacenter(int dataCenterid){

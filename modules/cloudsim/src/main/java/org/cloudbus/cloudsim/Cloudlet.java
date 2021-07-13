@@ -245,6 +245,16 @@ public class Cloudlet implements  Serializable{
      */
     private List<String> requiredFiles = null;
 
+    private double PredictFinishTime;
+
+    public double GetPredictFinishTime(){
+        return PredictFinishTime;
+    }
+
+    public void SetPredictFinishTime(double x){
+        this.PredictFinishTime = x;
+    }
+
     /**
      * Allocates a new Cloudlet object. The Cloudlet length, input and output
      * file sizes should be greater than or equal to 1. By default this
@@ -435,6 +445,7 @@ public class Cloudlet implements  Serializable{
         numberOfPes = pesNumber;
         execStartTime = 0.0;
         finishTime = -1.0;    // meaning this Cloudlet hasn't finished yet
+        PredictFinishTime = -1.0; //meaning this cloudlet hasn't been predicted.
         classType = 0;
         netToS = 0;
 
@@ -1127,7 +1138,7 @@ public class Cloudlet implements  Serializable{
      * @post $result >= 0.0
      */
     public long getCloudletTotalLength() {
-        return getCloudletLength() * getNumberOfPes();
+        return getCloudletLength();
     }
 
     /**

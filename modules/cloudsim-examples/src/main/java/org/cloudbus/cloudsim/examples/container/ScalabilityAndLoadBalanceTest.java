@@ -73,15 +73,6 @@ public class ScalabilityAndLoadBalanceTest {
     private static int Gaussian_var = 1000000;
 
 
-
-    //interval cloudlet information
-/*    private  static  double IntervalTime = 0;
-    private  static  double IntervalLength = 0;
-    private  static  double IntervalVariance = 0;
-    private  static  double IntervalAverageValue = 0;
-    private  static  double IntervalIncrement = 0;*/
-
-
     //Standard terminal output redirection path setting.
     private static String StdOutRedirectPath = "E://CloudSimOutput.txt";
 
@@ -176,8 +167,7 @@ public class ScalabilityAndLoadBalanceTest {
             ex.setInputDataPanel(self_design_distribution);
 
 
-//            XOR_using_NeuralNet;
-            //在这里将模型train一下。整理前两天的数据，
+
             // 需要整理今天的数据，把每个interval的信息放在一个cloudsim这个类的static变量，第n个放的是第n-1
             broker.submitCloudletList(cloudletList);   //截取，
 
@@ -190,7 +180,7 @@ public class ScalabilityAndLoadBalanceTest {
             CloudSim.stopSimulation();
             Log.printLine("Cost: " +  UserSideDatacenter.TotalContainerCost);
             Log.printLine("Interval Scale Up Test finished!");
-            ex.setResultPanel(newList);
+            ex.setEvaluationPanel(newList);
             // visualize the raw data
             EventQueue.invokeLater(() -> {
                 //change the default font

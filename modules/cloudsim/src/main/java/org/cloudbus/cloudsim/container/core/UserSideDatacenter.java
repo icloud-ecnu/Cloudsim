@@ -1,5 +1,8 @@
 package org.cloudbus.cloudsim.container.core;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.stat.descriptive.summary.Sum;
+import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.ResCloudlet;
 import org.cloudbus.cloudsim.Storage;
@@ -31,24 +34,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     private static int ContainerPesNumber = -1;
     public static double TotalContainerCost = 0.0;
     public static ArrayList<Container> AllContainers = new ArrayList<Container>();
-
-    public UserSideDatacenter(String name, ContainerDatacenterCharacteristics characteristics,
-                              ContainerVmAllocationPolicy vmAllocationPolicy,
-                              ContainerAllocationPolicy containerAllocationPolicy, List<Storage> storageList,
-                              double schedulingInterval, String experimentName, String logAddress,
-                              double vmStartupDelay, double containerStartupDelay
-    ) throws Exception {
-        super(name, characteristics, vmAllocationPolicy, containerAllocationPolicy, storageList, schedulingInterval, experimentName, logAddress);
-        String newlyCreatedVmsAddress;
-        int index = getExperimentName().lastIndexOf("_");
-        newlyCreatedVmsAddress = String.format("%s/NewlyCreatedVms/%s/%s.csv", getLogAddress(), getExperimentName().substring(0, index), getExperimentName());
-        setNewlyCreatedVmWriter(new CostumeCSVWriter(newlyCreatedVmsAddress));
-        setNewlyCreatedVms(0);
-        setDisableMigrations(false);
-        setNewlyCreatedVmsList(new ArrayList<Integer>());
-        this.vmStartupDelay = vmStartupDelay;
-        this.containerStartupDelay = containerStartupDelay;
-    }
+    public static Map<Integer, List<Pair<Double, Double>>> Balance_factor = new HashMap<Integer, List<Pair<Double, Double>>>();
 
 
     public UserSideDatacenter(String name, ContainerDatacenterCharacteristics characteristics,
@@ -76,7 +62,6 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     {
         return DatacentersLocation.get(x);
     }
-    //+
 
 
     @Override
@@ -274,7 +259,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         int RmConID = con.getId() ;
         //Remove container from its located vm
         for(ContainerVm vm : getContainerVmList()){
-            if(vm.getId() == con.getVm().getId()){
+            if(con.getVm() != null && vm.getId() == con.getVm().getId()){
                 AccumulateCostOfContainer(con);
                 vm.containerDestroy(con);
                 break;
@@ -303,7 +288,9 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
     protected void processCloudletBinding(SimEvent ev){  //这个实体是叫datacenter,  选择一个数据中心进行绑定（把连接绑定在哪个数据中心上）
         ContainerCloudlet cl = (ContainerCloudlet) ev.getData();
         Map<ContainerHost, List<Container>>Optional = new HashMap<ContainerHost, List<Container>>();
+        List <Double> CpuUtil = new ArrayList<Double>();
         for(Container con : getContainerList()){
+            CpuUtil.add(1 - (double)(con.getAvailablePesNum() / cl.getNumberOfPes()));
             if (con.getAvailablePesNum() >= cl.getNumberOfPes()){
                 if(con.getVm() == null){
                     Log.formatLine(Log.Opr.InnerDatacenterAllocation, CloudSim.clock()  +
@@ -315,6 +302,25 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
                     Optional.put(host, new ArrayList<Container>());
                 Optional.get(host).add(con);
             }
+        }
+        //calculate balance factor and update the static variable.
+        if(CpuUtil.size() >0){
+            double var = 0;
+            double mean = 0;
+            for(Double x : CpuUtil) mean += x;
+            mean /= CpuUtil.size();
+            for(Double x : CpuUtil)
+                var +=  (Math.pow((x - mean), 2));
+            var /= CpuUtil.size();
+
+            List<Pair<Double, Double>> Factor;
+            if( Balance_factor.get(getId()) == null)
+                Factor = new ArrayList<Pair<Double, Double>>();
+            else
+                Factor = Balance_factor.get(getId());
+            Pair<Double, Double> tmp = Pair.of(CloudSim.clock(), Math.sqrt(var));
+            Factor.add(tmp);
+            Balance_factor.put(getId(), Factor);
         }
 
         if(Optional.size() > 0){
@@ -352,10 +358,25 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
         //New strategy: find a container whose distinct distance to this new CloudLet is the smallest.
         Container res = null;
+        res = SelectContainerBasedOnStrategy(cl, Optional, CloudSim.LoadBalanceStrategy);
+        if(res == null){
+            res = SelectContainerBasedOnStrategy(cl, Optional, 100);
+            Log.printLine("MONITOR: LOAD BALANCE STRATEGY NOT WORKS.");
+        }
+        else{
+            Log.printLine("MONITOR: LOAD BALANCE STRATEGY WORKS.");
+        }
+        return res;
+    }
+
+    private Container SelectContainerBasedOnStrategy(ContainerCloudlet cl, Map<ContainerHost, List<Container>>Optional, int strategy){
+        Container res = null;
         double MinDistance = Double.POSITIVE_INFINITY;
         for(Map.Entry<ContainerHost, List<Container>> entry : Optional.entrySet()){
             for(Container c : entry.getValue()){
-                double distance = CalculateDistanceBetweenCloudLetAndContainer(cl, c);
+                double distance = CalculateDistanceBetweenCloudLetAndContainer(cl, c, strategy);
+                Log.printLine(CloudSim.clock() + " CLOUDLET LOCATION INFO: cloudLet id: " + cl.getCloudletId() +
+                        " To container " + c.getId() + " distance:" + distance);
                 if(MinDistance > distance){
                     res = c;
                     MinDistance = distance;
@@ -364,17 +385,61 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         }
         return res;
     }
-
-    private double CalculateDistanceBetweenCloudLetAndContainer(ContainerCloudlet cl, Container c){
-        double res = 0; //The lowest distance is better for binding cloudLets.
-        double finishTime = predictFinishTime(cl);
-        double CpuUtilization = c.getAvailablePesNum() / c.getNumberOfPes();
-        for(ResCloudlet ll : c.getContainerCloudletScheduler().getCloudletExecList()){
-            double x = ll.getRemainingCloudletLength();
-            res += CloudSim.ConvertLengthToTime(x) - finishTime; //this finish time need to be predicted.
+    //待定
+    private double CalculateDistanceBetweenCloudLetAndContainer(ContainerCloudlet cl, Container c, int strategy){
+        c.updateContainerProcessing(CloudSim.clock(),
+                getContainerAllocationPolicy().getContainerVm(c).getContainerScheduler().getAllocatedMipsForContainer(c));
+        double finishTime;
+        if(cl.GetPredictFinishTime() > 0 )
+            finishTime = cl.GetPredictFinishTime();
+        else{
+            finishTime = predictFinishTime(cl);
+            cl.SetPredictFinishTime(CloudSim.clock() + finishTime);
         }
-        return res * CpuUtilization;
+        double diff; //The lowest distance is better for binding cloudLets.
+        double CpuUtilization = 1 - (double)c.getAvailablePesNum() / c.getNumberOfPes();
+        double MinOverTime = Double.POSITIVE_INFINITY, MaxOverTime = Double.NEGATIVE_INFINITY;
+        boolean change_res = false;
+        for(ResCloudlet ll : c.getContainerCloudletScheduler().getCloudletExecList()){
+            ContainerCloudlet tmp =  (ContainerCloudlet)ll.getCloudlet();
+            if(tmp.getContainerId() == c.getId()){
+                change_res = true;
+                double x =  CloudSim.ConvertLengthToTime(ll.getRemainingCloudletLength());
+                Log.printLine(CloudSim.clock() + " REMAINING LENGTH INFO: CloudLet id: "
+                        + ll.getCloudletId() + " remaining time: " + x);
+                if(MinOverTime > x)
+                    MinOverTime = x;
+                if(MaxOverTime < x)
+                    MaxOverTime = x;
+            }
+        }
+        if(c.getContainerCloudletScheduler().getCloudletExecList().size() > 0 && change_res){
+            if(finishTime >=  MinOverTime && finishTime <= MaxOverTime)
+                diff = 0;
+            else if(finishTime > MaxOverTime)
+                diff = finishTime - MaxOverTime;
+            else
+                diff = MinOverTime - finishTime;
+        }
+        else{
+            diff = 0;
+        }
+        if(strategy == 0) {
+            // our strategy
+            double TimeRatio = diff / 60 - 5;
+            TimeRatio = 1 / (1 + Math.pow(Math.E, -1 * TimeRatio));
+            double TimeWeight = 1 / (1.1 - TimeRatio);
+            double LoadWeight =  1 / (1.1 - CpuUtilization);
+            return TimeWeight * LoadWeight;
+//            return TimeRatio * CpuUtilization;
+        }
+        else if(strategy == 1) //no load balance
+            return diff;
+        else
+            return 1 / (1 - CpuUtilization); // load balance
+
     }
+
 
 
     private double predictFinishTime(ContainerCloudlet cl){
@@ -382,7 +447,7 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         int res = 0;
         for(int i = 0; i < HistoryHangOnTime.size(); i++)
             res += HistoryHangOnTime.get(i);
-        return res / HistoryHangOnTime.size();
+        return (double)res / HistoryHangOnTime.size();
     }
 
 
@@ -396,39 +461,6 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
         AllContainers.add(con);
         TotalContainerCost += cost;
     }
-
-//    protected void GetLatestDatacenterInfoAndSendBack(SimEvent ev){
-//        double []data = new double[2];
-//        data[0] = getId();
-//        data[1] = getDelayFactorToUser(ev);
-//        sendNow(ev.getSource(),ev.getTag(),data);
-//        Log.formatLine(Log.Opr.Synchronization,CloudSim.clock() + " Synchronization send back from datacenter " + getId());
-//    }
-
-//    public double getDelayFactorToUser(SimEvent ev){
-//        double[] SourceLocation = (double[])ev.getData();
-//        int UsedPesNumber  = 0;
-//        UsedPesNumber = getContainerList().size() * ContainerPesNumber;
-//        int TotalPesNumber = getHostList().size() * getHostList().get(0).getNumberOfPes();
-//        double CpuUtilization = (double)UsedPesNumber / (double)TotalPesNumber;
-//        double delta_x = DatacenterLocation[0] - SourceLocation[0];
-//        double delta_y = DatacenterLocation[1] - SourceLocation[1];
-//        double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
-//        double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
-//        return CloudSim.TransmissionWeight * DelayNormalization + CloudSim.LoadBalanceWeight * CpuUtilization;
-//    }
-
-//    public double getDelayFactorToUser(){
-//        int UsedPesNumber  = 0;
-//        UsedPesNumber = getContainerList().size() * ContainerPesNumber;
-//        int TotalPesNumber = getHostList().size() * getHostList().get(0).getNumberOfPes();
-//        double CpuUtilization = (double)UsedPesNumber / (double)TotalPesNumber;
-//        double delta_x = DatacenterLocation[0] - 0.0;
-//        double delta_y = DatacenterLocation[1] - 0.0;
-//        double TransmissionDistance = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
-//        double DelayNormalization = TransmissionDistance / 11400;//we assume the longest distance is Math.sqrt(2) * 10000km;
-//        return CloudSim.TransmissionWeight * DelayNormalization + CloudSim.LoadBalanceWeight * CpuUtilization;
-//    }
 
 
     @Override
@@ -485,7 +517,6 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
                     Log.formatLine("Container %d, has not been created and allocated.");
                     return;
                 }
-
                 cl.setVmId(ContainerList.getById(getContainerList(),containerId).getVm().getId());
                 vmId = cl.getVmId();
             }
@@ -498,12 +529,10 @@ public class UserSideDatacenter extends PowerContainerDatacenter{
 
             ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
             ContainerVm vm = host.getContainerVm(vmId, userId);
-//
+
             Container container = vm.getContainer(containerId, userId);
             double estimatedFinishTime = container.getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
-            Log.formatLine(Log.Opr.ScaleDown, CloudSim.clock() + " Cloudlet id:" + cl.getCloudletId() + "estimated finish time: " + estimatedFinishTime);
 
-//            cl.setDelayFactor(getDelayFactorToUser());
             container.updateContainerProcessing(CloudSim.clock(),
                     getContainerAllocationPolicy().getContainerVm(container).getContainerScheduler().getAllocatedMipsForContainer(container));
 

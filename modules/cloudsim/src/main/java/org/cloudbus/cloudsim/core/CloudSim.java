@@ -87,6 +87,8 @@ public class CloudSim {
 
 	public static boolean initiative = true;
 
+	public static int LoadBalanceStrategy = 0;
+
 	public static double ConvertLengthToTime(double length){
 		return length / (mips * CloudletPesNum);
 	}

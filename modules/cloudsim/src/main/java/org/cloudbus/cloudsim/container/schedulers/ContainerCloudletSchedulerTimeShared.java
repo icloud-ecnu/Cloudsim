@@ -18,6 +18,7 @@ public class ContainerCloudletSchedulerTimeShared extends ContainerCloudletSched
      */
     protected int currentCPUs;
 
+    protected int mips;
     /**
      * Creates a new ContainerCloudletSchedulerTimeShared object. This method must be invoked before starting
      * the actual simulation.
@@ -28,6 +29,12 @@ public class ContainerCloudletSchedulerTimeShared extends ContainerCloudletSched
     public ContainerCloudletSchedulerTimeShared() {
         super();
         currentCPUs = 0;
+    }
+
+    public ContainerCloudletSchedulerTimeShared(int mips){
+        super();
+        currentCPUs = 0;
+        this.mips = mips;
     }
 
     /**
@@ -46,7 +53,7 @@ public class ContainerCloudletSchedulerTimeShared extends ContainerCloudletSched
         double timeSpam = currentTime - getPreviousTime();
 
         for (ResCloudlet rcl : getCloudletExecList()) {
-            rcl.updateCloudletFinishedSoFar((long) (getCapacity(mipsShare) * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
+            rcl.updateCloudletFinishedSoFar((long) (mips * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
         }
 
         if (getCloudletExecList().size() == 0) {

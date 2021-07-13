@@ -67,9 +67,10 @@ public class ContainerCloudletSchedulerDynamicWorkload extends ContainerCloudlet
             List<ResCloudlet> cloudletsToFinish = new ArrayList<>();
 
             for (ResCloudlet rcl : getCloudletExecList()) {
-                rcl.updateCloudletFinishedSoFar((long) (timeSpan
-                        * getTotalCurrentAllocatedMipsForCloudlet(rcl, getPreviousTime()) * Consts.MILLION));
-
+//                rcl.updateCloudletFinishedSoFar((long) (timeSpan
+//                        * getTotalCurrentAllocatedMipsForCloudlet(rcl, getPreviousTime()) * Consts.MILLION));
+                //arbitrary tuning by chris.
+                rcl.updateCloudletFinishedSoFar((long) (timeSpan * CloudSim.mips * numberOfPes *  Consts.MILLION));
                 if (rcl.getRemainingCloudletLength() == 0) { // finished: remove from the list
                     cloudletsToFinish.add(rcl);
                 } else { // not finish: estimate the finish time
